@@ -511,7 +511,7 @@
       "netlist": "",
       "plot": "",
       "pos_files": "",
-      "specctra_dsn": "RTO_cart.dsn",
+      "specctra_dsn": "intellicart.dsn",
       "step": "",
       "svg": "",
       "vrml": ""

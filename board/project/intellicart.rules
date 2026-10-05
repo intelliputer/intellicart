@@ -1,5 +1,5 @@
 
-(rules PCB RTO_cart
+(rules PCB intellicart
   (snap_angle 
     fortyfive_degree
   )

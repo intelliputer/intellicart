@@ -1,4 +1,4 @@
-(pcb C:\Users\Andrea\Documents\Retrocomputer\Intellivision\RTO_Cart\Kicad\RTO_cart.dsn
+(pcb intellicart.dsn
   (parser
     (string_quote ")
     (space_in_quoted_tokens on)
