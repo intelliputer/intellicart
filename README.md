@@ -1,4 +1,4 @@
-# Intellicart
+## Intellicart
 
 Intellicart is a Cartheur Research, B.V. flash-cartridge project for the Mattel Intellivision. It loads Intellivision program images from a micro SD card and presents a small OLED/button interface for selecting and starting them on original hardware.
 
