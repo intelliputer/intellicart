@@ -1,6 +1,6 @@
 ## Intellicart
 
-Intellicart is a Cartheur Research, B.V. flash-cartridge project for the Mattel Intellivision. It loads Intellivision program images from a micro SD card and presents a small OLED/button interface for selecting and starting them on original hardware.
+Intellicart is a flash-cartridge project for the Mattel Intellivision. It loads Intellivision program images from a micro SD card and presents a small OLED/button interface for selecting and starting them on original hardware.
 
 This repository brings together the hardware design, fabrication package, firmware, user documentation, and a small reverse-engineering workspace for experimenting with human--agent gameplay.
 
@@ -18,9 +18,7 @@ This repository brings together the hardware design, fabrication package, firmwa
 
 ## Hardware
 
-The KiCad project is [`board/project/intellicart.kicad_pro`](board/project/intellicart.kicad_pro). Its title block and PCB silkscreen identify the design as Intellicart from Cartheur Research, B.V.
-
-For manufacturing, use the complete, matching output set in [`board/gerbers/`](board/gerbers/). KiCad is configured to place newly plotted outputs there (`../gerbers/` relative to the project directory).
+The KiCad project is [`board/project/intellicart.kicad_pro`](board/project/intellicart.kicad_pro). For manufacturing, use the complete, matching output set in [`board/gerbers/`](board/gerbers/). KiCad is configured to place newly plotted outputs there (`../gerbers/` relative to the project directory).
 
 ## User manual
 
