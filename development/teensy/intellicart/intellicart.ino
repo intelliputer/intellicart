@@ -39,7 +39,7 @@ const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
 
 // change this to match your SD shield or module;
 // Teensy 3.5 & 3.6 & 4.1 on-board: BUILTIN_SDCARD
-//const int chipSelect = BUILTIN_SDCARD;
+const int chipSelect = BUILTIN_SDCARD;
 
 
 // Try max SPI clock for an SD. Reduce SPI_CLOCK if errors occur.
