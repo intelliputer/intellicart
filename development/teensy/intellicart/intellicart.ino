@@ -25,8 +25,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire2, OLED_RESET);
 //-#include <SD.h>
 
 #include "splash.h"
-#include <FS.h>
-#include <SdFat.h>
+// Teensy's SD wrapper supplies FS, its compatible SdFat build, and
+// BUILTIN_SDCARD for the Teensy 4.1's on-board SD socket.
+#include <SD.h>
 
 // SDCARD_SS_PIN is defined for the built-in SD on some boards.
 #ifndef SDCARD_SS_PIN
@@ -144,6 +145,9 @@ char longfilename[46]{};      // long file name (truncated)
 char mapfilename[64]{};       // matching CFG filename
 int lenfilename = 0;
 char path[96]{};
+char lastSelectedFilename[sizeof(longfilename)]{};
+char lastSelectedDirectory[sizeof(path)]{};
+bool returnToBrowser = false;
 
 [[noreturn]] void haltWithMessage(const char* firstLine, const char* secondLine = nullptr) {
   display.clearDisplay();
@@ -161,17 +165,164 @@ char path[96]{};
   }
 }
 
+// Turn an SD-card filename into the title shown on the OLED.  In particular,
+// omit the .bin extension and the _YYYY_publisher suffix used for the bundled
+// game collection, while keeping ordinary user-supplied filenames intact.
+void gameTitleFromFilename(char* title, size_t titleSize) {
+  strncpy(title, longfilename, titleSize - 1);
+  title[titleSize - 1] = '\0';
+
+  char* extension = strrchr(title, '.');
+  if (extension != nullptr) {
+    *extension = '\0';
+  }
+
+  for (char* character = title; *character != '\0'; ++character) {
+    if (*character == '_' && strlen(character) >= 6 &&
+        character[1] >= '0' && character[1] <= '9' &&
+        character[2] >= '0' && character[2] <= '9' &&
+        character[3] >= '0' && character[3] <= '9' &&
+        character[4] >= '0' && character[4] <= '9' &&
+        character[5] == '_') {
+      *character = '\0';
+      break;
+    }
+    if (*character == '_') {
+      *character = ' ';
+    }
+  }
+}
+
+// Extract the publisher from the _YYYY_publisher_### suffix used on the
+// prepared SD card.  It returns an empty string for ordinary filenames.
+void gamePublisherFromFilename(char* publisher, size_t publisherSize) {
+  publisher[0] = '\0';
+
+  char filename[sizeof(longfilename)];
+  strncpy(filename, longfilename, sizeof(filename) - 1);
+  filename[sizeof(filename) - 1] = '\0';
+  char* extension = strrchr(filename, '.');
+  if (extension != nullptr) {
+    *extension = '\0';
+  }
+
+  char* metadata = filename;
+  while (*metadata != '\0') {
+    if (*metadata == '_' && strlen(metadata) >= 6 &&
+        metadata[1] >= '0' && metadata[1] <= '9' &&
+        metadata[2] >= '0' && metadata[2] <= '9' &&
+        metadata[3] >= '0' && metadata[3] <= '9' &&
+        metadata[4] >= '0' && metadata[4] <= '9' &&
+        metadata[5] == '_') {
+      metadata += 6;
+      char* sequence = strrchr(metadata, '_');
+      if (sequence != nullptr && strlen(sequence) == 4 &&
+          sequence[1] >= '0' && sequence[1] <= '9' &&
+          sequence[2] >= '0' && sequence[2] <= '9' &&
+          sequence[3] >= '0' && sequence[3] <= '9' && sequence[4] == '\0') {
+        *sequence = '\0';
+      }
+      strncpy(publisher, metadata, publisherSize - 1);
+      publisher[publisherSize - 1] = '\0';
+      for (char* character = publisher; *character != '\0'; ++character) {
+        if (*character == '_') {
+          *character = ' ';
+        }
+      }
+      return;
+    }
+    ++metadata;
+  }
+}
+
+// The default font is six pixels wide, so a 128-pixel OLED holds 21 columns.
+// Use an ellipsis instead of allowing a long title or publisher to clip.
+void printOledLine(const char* text) {
+  constexpr size_t OLED_TEXT_COLUMNS = SCREEN_WIDTH / 6;
+  const size_t length = strlen(text);
+  if (length <= OLED_TEXT_COLUMNS) {
+    display.print(text);
+    return;
+  }
+
+  char shortened[OLED_TEXT_COLUMNS + 1];
+  strncpy(shortened, text, OLED_TEXT_COLUMNS - 3);
+  strcpy(shortened + OLED_TEXT_COLUMNS - 3, "...");
+  display.print(shortened);
+}
+
+void showLoadedGame() {
+  display.clearDisplay();
+  char gameTitle[sizeof(longfilename)];
+  gameTitleFromFilename(gameTitle, sizeof(gameTitle));
+  display.setCursor(0, 12);
+  display.print(gameTitle);
+  if (hacks > 0) {
+    display.setCursor(92, 1);
+    display.setTextSize(1);
+    display.print("(H)");
+  }
+  display.display();
+}
+
+bool anyBrowserButtonPressed() {
+  return digitalReadFast(BT1_PIN) || digitalReadFast(BT2_PIN) ||
+         digitalReadFast(BT3_PIN);
+}
+
+// A button press should cause one browser action.  Waiting for release is
+// smoother than a fixed delay and prevents the button used to leave a game
+// from immediately moving the browser selection.
+void waitForBrowserButtonsReleased() {
+  while (anyBrowserButtonPressed()) {
+    delay(5);
+  }
+  delay(20);
+}
+
 /////////////////////////////////////////////////////////////////////
 //                   SelectBinFile()                               //
 /////////////////////////////////////////////////////////////////////
 
+// Record the directory positions of every item that can be shown in the
+// browser.  This lets previous-navigation wrap from the first item to the
+// last without requiring the user to cycle through the entire directory.
+size_t indexSelectableEntries(FsFile& directory, uint64_t positions[],
+                              size_t capacity) {
+  size_t count = 0;
+  directory.rewindDirectory();
+
+  while (count < capacity) {
+    const uint64_t position = directory.curPosition();
+    FsFile candidate = directory.openNextFile();
+    if (!candidate) {
+      break;
+    }
+
+    char name[46]{};
+    candidate.getName(name, sizeof(name) - 1);
+    const char* extension = strrchr(name, '.');
+    const bool selectable = candidate.isDirectory()
+                                ? strcmp(name, "System Volume Information") != 0
+                                : extension != nullptr &&
+                                      (strcmp(extension, ".bin") == 0 ||
+                                       strcmp(extension, ".BIN") == 0);
+    candidate.close();
+
+    if (selectable) {
+      positions[count++] = position;
+    }
+  }
+
+  return count;
+}
 
 void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.fr/
 {
   int i;
-  int rootpos[255];
+  uint64_t rootpos[255];
   int curpos=0;
-  int lastpos;
+  uint64_t lastpos;
 
   char suf[10];                 // extension file
   uint64_t file_size;        // tailles des fichiers affiches
@@ -180,8 +331,12 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
   file_size = 0;
   bool selected = false;
   bool filefound = false;
-  int subfolder = 0;    // nexting subfolders counter
+  int subfolder = lastSelectedFilename[0] != '\0' &&
+                          lastSelectedDirectory[0] != '\0'
+                      ? 1
+                      : 0;
   int dot = 0;
+  bool restoreLastSelection = lastSelectedFilename[0] != '\0';
 
       display.clearDisplay();
       display.setTextSize(1);
@@ -192,12 +347,25 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
       //delay(1000);
 
     // Boucle de choix du fichier
-   path[0]=0;
-   if (!(root=sd.open("/"))) {
+   if (restoreLastSelection && lastSelectedDirectory[0] != '\0') {
+    strncpy(path, lastSelectedDirectory, sizeof(path) - 1);
+    path[sizeof(path) - 1] = '\0';
+    root = sd.open(path);
+   } else {
+    path[0] = '\0';
+    root = sd.open("/");
+   }
+   if (!root) {
+    restoreLastSelection = false;
+    path[0] = '\0';
+    subfolder = 0;
+    root = sd.open("/");
+   }
+   if (!root) {
     Serial.println("Error opening Root");
    }
-   // wait all buttons are released
-  while(digitalReadFast(BT1_PIN)|digitalReadFast(BT2_PIN)|digitalReadFast(BT3_PIN))
+   // Do not treat the button which opened the browser as navigation input.
+  waitForBrowserButtonsReleased();
   while (!selected)
   {
      while (!filefound)
@@ -213,11 +381,14 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
         root.rewindDirectory();
          break;
         } else {
-        root.rewindDirectory();
-        lastpos=root.curPosition();
-        entry=root.openNextFile();
-        entry.getName(longfilename,45);
-        break;
+        const size_t entryCount = indexSelectableEntries(
+            root, rootpos, sizeof(rootpos) / sizeof(rootpos[0]));
+        if (entryCount == 0) {
+          haltWithMessage("No BIN files found");
+        }
+        curpos = 0;
+        root.seekSet(rootpos[curpos]);
+        continue;
         }
       //entry.close();
         continue;
@@ -254,6 +425,10 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
 
       if(strcmp(suf,"bin")!=0  && strcmp(suf,"BIN")!=0 )
         continue; //not BIN file
+      if (restoreLastSelection && strcmp(longfilename, lastSelectedFilename) != 0) {
+        continue;
+      }
+      restoreLastSelection = false;
       filefound=true;
     }
 
@@ -267,15 +442,21 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
       display.clearDisplay();
       display.setTextSize(1);
       display.setTextColor(1);
+      char gameTitle[sizeof(longfilename)];
+      char gamePublisher[sizeof(longfilename)];
+      gameTitleFromFilename(gameTitle, sizeof(gameTitle));
+      gamePublisherFromFilename(gamePublisher, sizeof(gamePublisher));
       display.setCursor(0, 1);
-      display.print(longfilename);
-      display.setCursor(0,24);
+      printOledLine(gameTitle);
+      display.setCursor(0, 16);
       if (entry.isDirectory()) {
-        display.print("DIR");
-      } else
-      { display.print("KB:");
-      display.setCursor(22,24);
-      display.print(kb,DEC);
+        display.print("Folder");
+      } else if (gamePublisher[0] != '\0') {
+        printOledLine(gamePublisher);
+      } else {
+        display.print("Size: ");
+        display.print(kb, DEC);
+        display.print(" KB");
       }
       display.display();
 
@@ -288,7 +469,7 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
       //Next button
       if (digitalRead(BT1_PIN)) {
           digitalWriteFast(Status_PIN,HIGH);
-          delay(300);
+          waitForBrowserButtonsReleased();
           digitalWriteFast(Status_PIN,LOW);
           break; // readnext file
        }
@@ -296,20 +477,28 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
       //Prev button
       if (digitalRead(BT3_PIN)) {
           digitalWriteFast(Status_PIN,HIGH);
-          delay(300);
+          waitForBrowserButtonsReleased();
           digitalWriteFast(Status_PIN,LOW);
           if (curpos>1) {
             curpos-=2;
+            root.seekSet(rootpos[curpos]);
           } else {
-            curpos=0;
+            const size_t entryCount = indexSelectableEntries(
+                root, rootpos, sizeof(rootpos) / sizeof(rootpos[0]));
+            if (entryCount == 0) {
+              root.rewindDirectory();
+              curpos = 0;
+            } else {
+              curpos = entryCount - 1;
+              root.seekSet(rootpos[curpos]);
+            }
           }
-          root.seekSet(rootpos[curpos]);
           break;
       }
       //SELECT Button
       if (digitalRead(BT2_PIN)) {
           digitalWriteFast(Status_PIN,HIGH);
-          delay(300);
+          waitForBrowserButtonsReleased();
           digitalWriteFast(Status_PIN,LOW);
           if (entry.isDirectory()) {
             root=sd.open(longfilename);
@@ -323,6 +512,12 @@ void SelectBinFile() // adapted from the SDLEP-TFT project  http://dcmoto.free.f
             subfolder--;
             break;
           } else {
+          strncpy(lastSelectedFilename, longfilename,
+                  sizeof(lastSelectedFilename) - 1);
+          lastSelectedFilename[sizeof(lastSelectedFilename) - 1] = '\0';
+          strncpy(lastSelectedDirectory, path,
+                  sizeof(lastSelectedDirectory) - 1);
+          lastSelectedDirectory[sizeof(lastSelectedDirectory) - 1] = '\0';
           selected=true;
           break; // readnext file
           }
@@ -367,7 +562,7 @@ void loadROM() {
     display.setCursor(0, 1);
     display.print("Map CFG file error");
     display.setCursor(0,16);
-    display.print("restart RTO");
+    display.print("restart Intellicart");
     display.display();
     while(1);
   }
@@ -476,21 +671,15 @@ void loadROM() {
     // read from the file until there's nothing else in it:
     romLen=0;
     while (entry.available()) {
+      if (romLen >= ROM_WORD_CAPACITY) {
+        haltWithMessage("File too big!", longfilename);
+      }
       RBHi = entry.read();
       RBLo = entry.read();
       unsigned int dataW= RBLo | (RBHi << 8);
       //fileOffset=romLen - mapfrom[slot] + maprom[slot];
       ROM[romLen]=dataW;
       romLen++;
-         if (romLen>BINLENGTH) {
-          display.clearDisplay();
-          display.setCursor(0, 1);
-          display.print("File too big!");
-          display.setCursor(0,16);
-          display.print(longfilename);
-          display.display();
-          while(1);
-      }
 
     }
     //verify
@@ -623,27 +812,26 @@ void setup() {
   digitalWriteFast(RST_PIN,LOW);   //???????????
   digitalWriteFast(DIR2_PIN,HIGH); // A->B, TEENSY to INTV BUS
 
-  for (long i=0; i<BINLENGTH; i++) {
+  for (size_t i = 0; i < ROM_WORD_CAPACITY; i++) {
     ROM[i]=0;
   }
 
- for (long i=0; i<RAMSIZE; i++) {
+ for (size_t i = 0; i < RAM_WORD_CAPACITY; i++) {
     RAM[i]=0;
   }
 
- for (int i=0; i<maxHacks; i++) {
+ for (size_t i = 0; i < MAX_HACKS; i++) {
   HACK[i]=0;
   HACK_CODE[i]=0;
  }
 
   while (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS));
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setTextColor(1);
 
-  display.setCursor(12, 1);
-  display.print("RTO Cart");
-  display.setTextSize(1);
+  display.setCursor(31, 1);
+  display.print("Intellicart");
   display.setCursor(110,22);
   display.print("1.0");
   display.display();
@@ -671,26 +859,22 @@ void setup() {
   addrto[0]=0x54ff;
 
   display.clearDisplay();
-  display.setCursor(0, 1);
-  display.print("Press a button on RTO");
+  display.setCursor(31, 0);
+  display.print("Intellicart");
+  display.setCursor(0, 8);
+  display.print("PB1/PB3: Navigate");
+  display.setCursor(0, 16);
+  display.print("PB2: Start");
+  display.setCursor(0, 24);
+  display.print("PB3: Menu");
   display.display();
   resetCart();
-  HandleBUS();
+  HandleBUS(true);
 
   Serial.println("exit splash");
   SelectBinFile();
   loadROM();
-  display.clearDisplay();
-  display.setCursor(0, 1);
-  display.print("Emulating ROM:");
-  display.setCursor(0,16);
-  display.print(longfilename);
-  if (hacks>0) {
-    display.setCursor(92,1);
-    display.setTextSize(1.5);
-    display.print("(H)");
-  }
-  display.display();
+  showLoadedGame();
 
 
 }
@@ -737,7 +921,7 @@ void resetCart() {
 //                     HANDLE BUS
 ////////////////////////////////////////////////////////////////////////////////////
 
-FASTRUN void HandleBUS()
+FASTRUN void HandleBUS(bool waitForSelection)
 {
   unsigned int lastBusState, busState1;
   unsigned int parallelBus, dataOut;
@@ -776,11 +960,21 @@ FASTRUN void HandleBUS()
 
     do
     {
-    if (digitalReadFast(BT1_PIN)) {
+    if (waitForSelection &&
+        (digitalReadFast(BT1_PIN) || digitalReadFast(BT2_PIN) ||
+         digitalReadFast(BT3_PIN))) {
       exitBUS=0;
       break;
-      }
-    if (digitalReadFast(BT3_PIN)) doReboot();
+    }
+    if (!waitForSelection && digitalReadFast(BT1_PIN)) {
+      exitBUS=0;
+      break;
+    }
+    if (!waitForSelection && digitalReadFast(BT3_PIN)) {
+      returnToBrowser = true;
+      exitBUS = 0;
+      break;
+    }
 
     } while (!((GPIO9_PSR ^ lastBusState) & BUS_STATE_MASK));
     // We detected a change, but reread the bus state to make sure that all three pins have settled
@@ -881,7 +1075,7 @@ FASTRUN void HandleBUS()
         }
 
         if (hacks>0) {
-          for (int i=0; i<maxHacks;i++) {
+          for (size_t i = 0; i < MAX_HACKS; i++) {
             if (parallelBus==HACK[i]) {
               dataOut=HACK_CODE[i];
               deviceAddress = true;
@@ -938,5 +1132,11 @@ FASTRUN void HandleBUS()
 void loop()
 {
 resetCart();
-HandleBUS();
+HandleBUS(false);
+if (returnToBrowser) {
+  returnToBrowser = false;
+  SelectBinFile();
+  loadROM();
+  showLoadedGame();
+}
 }
