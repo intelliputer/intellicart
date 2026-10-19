@@ -1,0 +1,85 @@
+Intellicart refinement notes — 2026-10-19
+
+This is a working release-notes draft covering the Intellicart firmware,
+microSD workflow, documentation, and project-structure refinements completed
+today.
+
+Firmware and build
+------------------
+
+- Made the Teensy 4.1 sketch build cleanly in Arduino IDE and Arduino CLI.
+- Moved splash.h beside intellicart.ino so Arduino can resolve the local
+  include consistently.
+- Replaced the separately installed SdFat dependency with Teensy's bundled
+  SD.h interface, retaining the SDIO / BUILTIN_SDCARD setup required by the
+  Teensy 4.1.
+- Updated outdated ROM/RAM/hack constants to the current names and sizes.
+- Confirmed compile and upload using the Teensy 4.1 FQBN.
+
+Startup and controls
+--------------------
+
+- Rebranded the on-device interface from RTO to Intellicart.
+- Replaced the vague startup prompt with:
+
+            Intellicart
+  PB1/PB3: Navigate
+  PB2: Start
+  PB3: Menu
+
+- Any cartridge button now dismisses the startup help and opens the browser.
+- PB1 and PB3 navigate in opposite directions; PB2 opens a folder or starts
+  the selected game.
+- Browser navigation wraps in both directions: pressing previous at the first
+  item selects the last, and pressing next at the last item selects the first.
+- Configuration files are excluded from the browser display.
+- Added button-release handling around browser entry and navigation to avoid
+  accidental repeated moves or a choppy initial selection.
+- Clarified the running-game controls: PB1 restarts the current game and PB3
+  returns to the menu.
+- Returning to the menu restores the previous directory and selected game,
+  rather than returning to the top of the list.
+
+OLED browser presentation
+-------------------------
+
+- Replaced raw technical filenames in the browser with a readable game title
+  and publisher when that information is encoded in the filename.
+- Long text is shortened with an ellipsis to remain within the OLED display.
+- Removed the clumsy full-filename presentation during game launch; the user
+  sees useful game-identifying information instead.
+
+microSD card baseline
+---------------------
+
+- Prepared and labelled the card as INTELLICART.
+- Added the root fallback mapping file, 0.cfg, for standard ROM images.
+- Copied and renamed the supplied ROM collection as 178 numbered .bin files.
+- The card has no game-specific CFG files at this stage; all entries currently
+  use the fallback configuration.
+- Documented that special bank-switched or RAM-mapped games may need their own
+  matching CFG file during later compatibility work.
+
+Documentation and project structure
+-----------------------------------
+
+- Rewrote the README for the current Teensy 4.1 firmware revision.
+- Added Arduino CLI setup, build/upload, Linux udev, microSD setup, controls,
+  the Program-button warning, and repository-layout guidance.
+- Separated the verified firmware/UI baseline from the still-pending physical
+  cartridge bring-up work.
+- Added a live-hardware test checklist for after the 74x245 bus transceivers
+  are fitted.
+- Added a 178-entry SD-card catalogue containing source title, year,
+  publisher, category, ROM size, and exact SD filename.
+- Added a reproducible catalogue generator script.
+- Added support for optional local cover thumbnails in catalog/covers/ using
+  three-digit catalogue numbers (for example, 053.png). No cover scans have
+  been added because no appropriately licensed artwork source has been chosen.
+
+Known next milestone
+--------------------
+
+Fit the 74x245 bus-transceiver ICs, test on a real Intellivision console with
+a known-good standard ROM first, then record compatibility results in the
+SD-card catalogue before expanding mapper-specific support.
