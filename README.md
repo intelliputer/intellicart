@@ -20,7 +20,7 @@ this firmware independently of physical cartridge assembly.
 
 ### Physical cartridge bring-up: pending live test
 
-The remaining hardware milestone is to fit the 74x245 bus-transceiver ICs and
+The remaining hardware milestone is to fit the 74LVC245 bus-transceiver ICs and
 perform a live test on an Intellivision console. That test should validate:
 
 - cartridge insertion, power-up, and reset behavior;
@@ -32,6 +32,23 @@ perform a live test on an Intellivision console. That test should validate:
 Treat any issues found during the live test as hardware-integration findings,
 not regressions in the verified firmware baseline, unless the evidence points
 to the firmware.
+
+### Bus-transceiver requirement
+
+Fit **74LVC245 or 74LVC245A** parts in U1, U2, U3, and U5. The board is a
+3.3 V Teensy interface to a 5 V Intellivision cartridge bus: the LVC family
+operates from the board's 3.3 V rail and has 5-V-tolerant bus inputs. Its 3.3 V
+outputs are valid logic highs for the console's TTL-style inputs.
+
+Do **not** substitute 74LS245 devices. They require a 4.75--5.25 V supply and
+are therefore out of specification on this board. Supplying them at 5 V would
+also allow their outputs to drive Teensy-connected signals at unsafe 5 V logic
+levels. This is especially important for U1/U2's bidirectional 16-bit bus and
+U3's console-to-Teensy control signals.
+
+The supplied [SN74LVC245A datasheet](board/74lvc245a.pdf) documents the
+3.3 V operating range and 5.5 V input tolerance. The included
+[SN74LS245 datasheet](board/74ls245.pdf) documents its 5 V supply requirement.
 
 ## Firmware
 
