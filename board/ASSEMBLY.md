@@ -14,11 +14,12 @@ photos and setup screenshots are stored locally under
 ## Before soldering
 
 1. Inspect the PCB for shorts, damaged edge contacts, or incomplete holes.
-   Confirm that the cartridge-edge bevel and gold fingers, if ordered, are
-   clean and undamaged.
+   The cartridge interface, **J1**, is the exposed copper at the PCB edge; it
+   is not a component and nothing is soldered there. Confirm its specified
+   hard-gold-over-nickel finish and bevel are clean and undamaged.
 2. Inventory the BOM and identify pin 1 on every DIP socket and IC.  Dry-fit
-   the Teensy 4.1, the OLED header/display, buttons, LEDs, and the cartridge
-   connector before committing solder.
+   the Teensy 4.1, OLED header/display, buttons, and LEDs before committing
+   solder. Do not procure or fit a separate J1 connector: it is the PCB edge.
 3. If the Teensy or OLED may need to be removed later, use suitable machined
    headers/socket pins.  The illustrated build uses fine pins for these
    removable connections rather than permanently soldering the modules.
@@ -35,7 +36,7 @@ first, trim leads after each group, and check for bridges before continuing.
 | 3 | DIP sockets | U1, U2, U3, U5: 20-pin sockets | Align each notch with the PCB silkscreen. Solder opposite corner pins first, check that the socket is flat, then finish. Do **not** install the 74LVC245 devices yet. |
 | 4 | OLED connector | J2: 1×4, 2.54 mm header/socket | Match the connector style to the OLED module and ensure its pin order agrees with the board silk/schematic. |
 | 5 | Controls and indicators | SW1–SW3; D1–D2 | Buttons should sit square. Observe LED polarity: the long lead/anode must match the `+`/anode marking. |
-| 6 | Cartridge interface | J1: 2×22 card-edge connector | Keep the connector exactly perpendicular to the PCB. Avoid contaminating the gold contacts with flux or solder. |
+| 6 | Cartridge interface | J1: integral 2×22 PCB edge fingers | No part is fitted. Keep flux, solder, abrasives, and handling residue off both sides of the fingers. |
 | 7 | Controller/module connections | U4: Teensy 4.1; OLED display | Fit removable headers or sockets if intended. Check all module pins are aligned before soldering. |
 | 8 | Logic ICs | U1, U2, U3, U5: 74LVC245 | Only after all soldering and cleaning is complete, insert each IC into its socket with the notch/dot aligned to pin 1. |
 
@@ -44,7 +45,7 @@ first, trim leads after each group, and check for bridges before continuing.
 Before connecting USB or the console:
 
 1. Use magnification to inspect every joint, especially the Teensy headers,
-   OLED header, DIP sockets, and cartridge-edge connector.
+   OLED header, DIP sockets, and the exposed cartridge-edge fingers.
 2. With a multimeter, check for a low-resistance short between the board's
    power and ground rails. Also check that adjacent edge contacts are not
    bridged.
@@ -57,10 +58,11 @@ Before connecting USB or the console:
 
 1. Install the Arduino IDE and the Teensy software add-on appropriate for the
    host operating system. Select the Teensy board and its USB serial port.
-2. Open the RTO Cart firmware project referenced by the build article. Install
-   its required `Adafruit_GFX` and `Adafruit_SSD1306` libraries, then compile
-   and upload it to the Teensy. Use the firmware version that matches the
-   installed board revision.
+2. Open this repository's
+   [`development/teensy/intellicart/intellicart.ino`](../development/teensy/intellicart/intellicart.ino),
+   install `Adafruit_GFX` and `Adafruit_SSD1306`, then compile and upload it to
+   the Teensy. Use the firmware version that matches the installed board
+   revision.
 3. Format a microSD card and create `0.cfg` in its root with this default
    mapping from the illustrated guide:
 
@@ -97,7 +99,8 @@ population. The rest of the photographed workflow is summarized below.
 ![Image two](images/image-two.jpg)
 
 After the pictured stages, complete the board by fitting the buttons, LEDs,
-OLED connector, Teensy headers, and cartridge edge connector. Check the board
+OLED connector and Teensy headers. Do not solder anything to the cartridge-edge
+fingers. Check the board
 for bridges and correct orientation, then install the 74LVC245 devices in
 their sockets. Connect the Teensy over USB, select the correct Teensy target
 and serial port in the Arduino IDE, install the display libraries, and upload
