@@ -68,6 +68,17 @@ is confirmed, changed in the schematic, synchronized to the PCB, and reviewed
 with a fresh DRC. See [J1-INTERFACE-REVIEW.md](J1-INTERFACE-REVIEW.md) for
 the pin-by-pin comparison and required decision.
 
+## Mechanical release blocker
+
+The two 5.3766 mm circular features are presently drawn on `Edge.Cuts` at the
+mounting-hole locations. Some fabricator parsers select their 51.4707 ×
+5.3766 mm combined bounding box instead of the complete 68.072 × 98.908 mm
+perimeter. Before production release, convert them to proper NPTH mounting
+holes at the same locations and reroute/review the three nearby tracks that
+currently violate the required 0.25 mm hole clearance. This is intentionally
+deferred to the electrical/mechanical review; do not waive the measurement
+warning or silently modify the outline.
+
 ## Final order gate
 
 Do not place an order until all are true:

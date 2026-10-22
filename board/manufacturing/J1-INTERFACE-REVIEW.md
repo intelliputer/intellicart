@@ -66,3 +66,14 @@ After that decision, rerun DRC with schematic parity enabled and conduct the
 first powered test with current limiting. Test an Intellivision and an
 Intellivoice socket separately; the exposed alternate functions make those
 not interchangeable tests.
+
+## Mechanical-profile review item
+
+The card-edge tongue is not centered on the upper body: its centerline is
+0.8763 mm left of the body centerline. The upper transitions are also unequal
+(4.0640 mm on the left and 5.8166 mm on the right; a 1.7526 mm difference).
+The current geometry is preserved pending review because it may encode an
+intentional connector-registration offset. During the electrical/interface
+review, compare this placement with a known-good cartridge and the console
+slot datum; document whether the offset is intentional before changing J1,
+the finger positions, or the board outline.
