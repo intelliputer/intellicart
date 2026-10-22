@@ -17,7 +17,9 @@ Ask the manufacturer to check the following:
 - selective electroplated hard nickel/gold fingers and a 30° insertion-edge
   bevel; and
 - the `Edge_Cuts` profile, including the 58.1914 mm tongue width and 68.072 mm
-  maximum board width.
+  maximum board width. The standalone profile is 68.072 × 98.908 mm; its
+  complete perimeter is intentionally board-level artwork rather than
+  footprint-owned geometry, for reliable fabricator profile detection.
 
 The DRC report has 0 unconnected pads and 0 schematic-parity issues. Its 21
 remaining findings are library-copy/text-size warnings, not copper-clearance

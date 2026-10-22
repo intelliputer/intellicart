@@ -19,7 +19,7 @@ generated profile preview remain the authority for the complete board outline.
 | Contact finish | hard gold over nickel | mandatory fabrication requirement |
 | Insertion edge | 30° bevel | mandatory fabrication requirement |
 | Maximum board width | 68.072 mm | `Edge.Cuts` x extrema |
-| Overall board length | 90.068 mm | `Edge.Cuts` y extrema |
+| Overall board length | 98.908 mm | `Edge.Cuts` y extrema |
 | Tongue width | 58.1914 mm | width between the two straight tongue sides |
 
 The previous approximate overall-width, connector-tail-pitch, and generic

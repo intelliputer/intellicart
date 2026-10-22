@@ -7440,56 +7440,6 @@
 		(sheetfile "intellicart.kicad_sch")
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
-			(start 0 7.39)
-			(end 0 0)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "Edge.Cuts")
-			(uuid "1f6c43a1-13da-4c15-b9e7-f5adcce77e21")
-		)
-		(fp_line
-			(start 0 7.39)
-			(end 1.45 8.84)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "Edge.Cuts")
-			(uuid "34b43264-2c5b-4f7d-bec4-8dbdce3fe913")
-		)
-		(fp_line
-			(start 56.7414 8.84)
-			(end 1.45 8.84)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "Edge.Cuts")
-			(uuid "3da9302f-7698-441a-9848-c604aaf1613a")
-		)
-		(fp_line
-			(start 58.1914 7.39)
-			(end 56.7414 8.84)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "Edge.Cuts")
-			(uuid "bad23df6-f465-434f-8740-c4824bad6534")
-		)
-		(fp_line
-			(start 58.1914 7.39)
-			(end 58.1914 0)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "Edge.Cuts")
-			(uuid "8bb90b9e-294b-4b4a-bb67-df050ab52237")
-		)
-		(fp_line
 			(start 0 0)
 			(end 58.1914 0)
 			(stroke
@@ -8439,6 +8389,56 @@
 				(xyz 0 0 0)
 			)
 		)
+	)
+	(gr_line
+		(start 88.9 190.93)
+		(end 88.9 183.54)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "Edge.Cuts")
+		(uuid "1f6c43a1-13da-4c15-b9e7-f5adcce77e21")
+	)
+	(gr_line
+		(start 88.9 190.93)
+		(end 90.35 192.38)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "Edge.Cuts")
+		(uuid "34b43264-2c5b-4f7d-bec4-8dbdce3fe913")
+	)
+	(gr_line
+		(start 145.6414 192.38)
+		(end 90.35 192.38)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "Edge.Cuts")
+		(uuid "3da9302f-7698-441a-9848-c604aaf1613a")
+	)
+	(gr_line
+		(start 147.0914 190.93)
+		(end 145.6414 192.38)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "Edge.Cuts")
+		(uuid "bad23df6-f465-434f-8740-c4824bad6534")
+	)
+	(gr_line
+		(start 147.0914 190.93)
+		(end 147.0914 183.54)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "Edge.Cuts")
+		(uuid "8bb90b9e-294b-4b4a-bb67-df050ab52237")
 	)
 	(gr_line
 		(start 84.836 93.472)
