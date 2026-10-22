@@ -2,12 +2,12 @@
 
 ## Release status
 
-There is **no current production release**.  `../gerbers/` is retained solely
-as an archival KiCad 9.0.2 export from 2026-10-05. The PCB source has a later
-filesystem timestamp, so this export cannot be tied conclusively to the
-checked-in source; no matching DRC or drill report is present. Treat every
-file in that directory as unsuitable for ordering until this procedure is
-completed and the resulting revision is reviewed.
+There is **no current production release**. The stale KiCad 9.0.2 export from
+2026-10-05 has been removed. The current
+[`Intellicart-Gerbers-r1.3-draft/`](Intellicart-Gerbers-r1.3-draft/) package
+was generated from the current source for manufacturer fitness review; it is
+not an order release. Treat it as unsuitable for ordering until this procedure
+is completed and the resulting revision is reviewed.
 
 This is deliberate release control, not a statement that the design is known
 bad.  A board house must receive a package tied to one immutable source
@@ -24,9 +24,11 @@ revision and validation result.
   profile from copper, solder mask, or silkscreen.
 - J1 is the integral 44-contact (2 x 22), 2.54 mm-pitch card edge. Its contacts
   must remain exposed on both sides.
-- Specify **hard gold over nickel** on the J1 fingers and a **bevelled insertion
-  edge**. ENIG is not an equivalent substitute for a repeatedly inserted card
-  edge unless the manufacturer explicitly approves it for this use.
+- Specify Eurocircuits **Gold Edge Connectors**: selective electroplated hard
+  nickel/gold on the J1 fingers and the standard **30° bevel**. The total
+  plated-finger area is **493.98 mm²** (enter 494 mm² for both faces unless
+  Eurocircuits directs otherwise). ENIG is not an equivalent substitute for a
+  repeatedly inserted card edge.
 - Do not request paste stencils for this through-hole assembly unless a future
   layout revision introduces paste-requiring components. Exclude `F_Paste` and
   `B_Paste` from the bare-board fabrication archive.
@@ -44,7 +46,7 @@ revision and validation result.
 4. Generate a drill report. Preserve the plated and non-plated drill counts,
    sizes, and the layer stackup in a text report.
 5. Regenerate all fabrication data into a new, revisioned directory; never mix
-   it with `../gerbers/`. Include front/back copper, solder mask, silkscreen,
+   it with another revision. Include front/back copper, solder mask, silkscreen,
    board profile, PTH/NPTH drills, and the Gerber job file. Generate a front and
    back copper preview and inspect the card-edge contacts, profile, holes, and
    silkscreen clearance manually.
@@ -55,6 +57,16 @@ revision and validation result.
    DRC result, drill summary, dimensions confirmed from the actual profile, and
    the card-edge finish/bevel instruction. Have a second person inspect the
    ZIP and previews before upload.
+
+## Electrical release blocker
+
+The source audit found J1 contacts 8, 10, and 20 tied to GND. The canonical
+port table identifies these contacts as external video, master clock, and ROM
+disable. This is an unresolved electrical-design issue: do not power a board
+or create a fabrication release until the intended treatment of those signals
+is confirmed, changed in the schematic, synchronized to the PCB, and reviewed
+with a fresh DRC. See [J1-INTERFACE-REVIEW.md](J1-INTERFACE-REVIEW.md) for
+the pin-by-pin comparison and required decision.
 
 ## Final order gate
 

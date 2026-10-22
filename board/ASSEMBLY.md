@@ -2,8 +2,8 @@
 
 This is a practical through-hole assembly and bring-up sequence for the
 Intellicart PCB. It follows the construction order shown in the archived
-reference build, while using the references and values from this repository's
-[`project/intellicart_BOM.csv`](project/intellicart_BOM.csv). The reference
+reference build, while using the values and designators in the authoritative
+[`project/intellicart.kicad_sch`](project/intellicart.kicad_sch). The reference
 photos and setup screenshots are stored locally under
 [`images/`](images/).
 
@@ -110,6 +110,5 @@ the first console test as described above.
 
 ## Local references
 
-- [`project/intellicart_BOM.csv`](project/intellicart_BOM.csv) — repository-specific references, quantities, and values.
 - [`project/intellicart.kicad_sch`](project/intellicart.kicad_sch) — authoritative connectivity and orientation information for this PCB.
 - `images/image-one.jpg` and `images/image-two.jpg` — retained reference build photos.

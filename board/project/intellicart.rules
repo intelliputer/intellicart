@@ -53,22 +53,22 @@
     "kicad_default" "Via[0-1]_800:400_um-kicad_default"
   )
   (class default
-    +5V GND "unconnected-(J1-Pad2)" ~{msync'} "unconnected-(J1-Pad4)" d7' "unconnected-(J1-Pad6)" d8'
-    "Net-(R5-Pad1)" d6' ~{MSYNC} d9' d5' "unconnected-(J1-Pad14)" d10' "unconnected-(J1-Pad16)"
-    d4' "unconnected-(J1-Pad18)" d11' d3' d12' d13' d2' d14'
-    "unconnected-(J1-Pad30)" d1' "Net-(J1-Pad32)" d0' "Net-(J1-Pad34)" d15' "Net-(J1-Pad36)" bdir'
+    +5V GND "unconnected-(J1-Pin_2-Pad2)" ~{msync'} "unconnected-(J1-Pin_4-Pad4)" d7' "unconnected-(J1-Pin_6-Pad6)" d8'
+    "Net-(R5-Pad1)" d6' ~{MSYNC} d9' d5' "unconnected-(J1-Pin_14-Pad14)" d10' "unconnected-(J1-Pin_16-Pad16)"
+    d4' "unconnected-(J1-Pin_18-Pad18)" d11' d3' d12' d13' d2' d14'
+    "unconnected-(J1-Pin_30-Pad30)" d1' "Net-(J1-Pin_32)" d0' "Net-(J1-Pin_34)" d15' "Net-(J1-Pin_36)" bdir'
     bc2' bc1' DIR D7 D6 D5 D4 D3
-    D2 D1 D0 D15 "unconnected-(U3-Pad9)" D14 "unconnected-(U3-Pad11)" "unconnected-(U3-Pad7)"
+    D2 D1 D0 D15 "unconnected-(U3-A7-Pad9)" D14 "unconnected-(U3-B7-Pad11)" "unconnected-(U3-A5-Pad7)"
     D13 D12 D11 D10 D9 D8 BDIR BC1
-    BC2 +3.3V rst' "unconnected-(U3-Pad6)" "unconnected-(U3-Pad8)" "unconnected-(U3-Pad12)" "unconnected-(U3-Pad13)" "unconnected-(U3-Pad14)"
-    "unconnected-(U4-Pad2)" "unconnected-(U4-Pad3)" SDA "Net-(R4-Pad1)" SCL "Net-(R3-Pad1)" BT3 DIR2
-    "unconnected-(U4-Pad11)" "unconnected-(U4-Pad35)" "unconnected-(U4-Pad12)" "unconnected-(U4-Pad13)" "unconnected-(U4-Pad14)" "unconnected-(U4-Pad20)" "unconnected-(U4-Pad21)" "unconnected-(U4-Pad22)"
-    "unconnected-(U4-Pad23)" "unconnected-(U4-Pad24)" "unconnected-(U4-Pad25)" RST "unconnected-(U4-Pad49)" "unconnected-(U4-Pad50)" "unconnected-(U4-Pad51)" "unconnected-(U4-Pad52)"
-    "unconnected-(U4-Pad53)" "unconnected-(U4-Pad54)" "unconnected-(U4-Pad55)" "unconnected-(U4-Pad56)" "unconnected-(U4-Pad57)" "unconnected-(U4-Pad58)" "unconnected-(U4-Pad59)" "unconnected-(U4-Pad60)"
-    "unconnected-(U4-Pad61)" "unconnected-(U4-Pad62)" "unconnected-(U4-Pad63)" "unconnected-(U4-Pad64)" "unconnected-(U4-Pad65)" "unconnected-(U4-Pad66)" "unconnected-(U4-Pad67)" "Net-(D1-Pad2)"
-    "Net-(D2-Pad2)" Status BT1 BT2 "unconnected-(U5-Pad3)" "unconnected-(U5-Pad4)" "unconnected-(U5-Pad5)" "unconnected-(U5-Pad6)"
-    "unconnected-(U5-Pad7)" "unconnected-(U5-Pad8)" "unconnected-(U5-Pad9)" "unconnected-(U5-Pad11)" "unconnected-(U5-Pad12)" "unconnected-(U5-Pad13)" "unconnected-(U5-Pad14)" "unconnected-(U5-Pad15)"
-    "unconnected-(U5-Pad16)" "unconnected-(U5-Pad17)"
+    BC2 +3.3V rst' "unconnected-(U3-A4-Pad6)" "unconnected-(U3-A6-Pad8)" "unconnected-(U3-B6-Pad12)" "unconnected-(U3-B5-Pad13)" "unconnected-(U3-B4-Pad14)"
+    "unconnected-(U4-0_RX1_CRX2_CS1-Pad2)" "unconnected-(U4-1_TX1_CTX2_MISO1-Pad3)" SDA "Net-(R4-Pad1)" SCL "Net-(R3-Pad1)" BT3 DIR2
+    "unconnected-(U4-9_OUT1C-Pad11)" "unconnected-(U4-13_SCK_LED-Pad35)" "unconnected-(U4-10_CS_MQSR-Pad12)" "unconnected-(U4-11_MOSI_CTX1-Pad13)" "unconnected-(U4-12_MISO_MQSL-Pad14)" "unconnected-(U4-28_RX7-Pad20)" "unconnected-(U4-29_TX7-Pad21)" "unconnected-(U4-30_CRX3-Pad22)"
+    "unconnected-(U4-31_CTX3-Pad23)" "unconnected-(U4-32_OUT1B-Pad24)" "unconnected-(U4-33_MCLK2-Pad25)" RST "unconnected-(U4-VUSB-Pad49)" "unconnected-(U4-VBAT-Pad50)" "unconnected-(U4-3V3-Pad51)" "unconnected-(U4-GND-Pad52)"
+    "unconnected-(U4-PROGRAM-Pad53)" "unconnected-(U4-ON_OFF-Pad54)" "unconnected-(U4-5V-Pad55)" "unconnected-(U4-D--Pad56)" "unconnected-(U4-D+-Pad57)" "unconnected-(U4-GND-Pad58)" "unconnected-(U4-GND-Pad59)" "unconnected-(U4-R+-Pad60)"
+    "unconnected-(U4-LED-Pad61)" "unconnected-(U4-T--Pad62)" "unconnected-(U4-T+-Pad63)" "unconnected-(U4-GND-Pad64)" "unconnected-(U4-R--Pad65)" "unconnected-(U4-D--Pad66)" "unconnected-(U4-D+-Pad67)" "Net-(D1-A)"
+    "Net-(D2-A)" Status BT1 BT2 "unconnected-(U5-A1-Pad3)" "unconnected-(U5-A2-Pad4)" "unconnected-(U5-A3-Pad5)" "unconnected-(U5-A4-Pad6)"
+    "unconnected-(U5-A5-Pad7)" "unconnected-(U5-A6-Pad8)" "unconnected-(U5-A7-Pad9)" "unconnected-(U5-B7-Pad11)" "unconnected-(U5-B6-Pad12)" "unconnected-(U5-B5-Pad13)" "unconnected-(U5-B4-Pad14)" "unconnected-(U5-B3-Pad15)"
+    "unconnected-(U5-B2-Pad16)" "unconnected-(U5-B1-Pad17)"
     (clearance_class default)
     (via_rule default)
     (rule

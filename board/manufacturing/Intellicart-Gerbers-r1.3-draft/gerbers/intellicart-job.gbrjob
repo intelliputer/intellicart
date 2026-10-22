@@ -3,9 +3,9 @@
     "GenerationSoftware": {
       "Vendor": "KiCad",
       "Application": "Pcbnew",
-      "Version": "9.0.2+dfsg-1"
+      "Version": "10.0.7"
     },
-    "CreationDate": "2026-10-05T17:04:01+02:00"
+    "CreationDate": "2026-10-22T18:33:52+02:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
@@ -39,16 +39,6 @@
     {
       "Path": "intellicart-B_Cu.gbl",
       "FileFunction": "Copper,L2,Bot",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "intellicart-F_Paste.gtp",
-      "FileFunction": "SolderPaste,Top",
-      "FilePolarity": "Positive"
-    },
-    {
-      "Path": "intellicart-B_Paste.gbp",
-      "FileFunction": "SolderPaste,Bot",
       "FilePolarity": "Positive"
     },
     {
