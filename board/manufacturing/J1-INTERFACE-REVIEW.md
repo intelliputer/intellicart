@@ -77,3 +77,8 @@ intentional connector-registration offset. During the electrical/interface
 review, compare this placement with a known-good cartridge and the console
 slot datum; document whether the offset is intentional before changing J1,
 the finger positions, or the board outline.
+
+If that review calls for a symmetric profile, favor expanding the constraining
+side outward to preserve or increase finger-room during prototype insertion.
+Do not achieve symmetry by reducing the tongue or removing clearance around
+the fingers unless the console datum review establishes that it is required.
