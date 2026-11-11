@@ -5,7 +5,7 @@
 \usepackage{hyperref}
 \usepackage{booktabs}
 
-\title{Auditable Bounded Deliberation on Constrained Game Hardware:\\
+\title{Auditable Bounded Intuition on Constrained Game Hardware:\\
 A Checkers Case Study}
 \author{Christopher A. Tucker\\
 \texttt{cartheur@pm.me}}
@@ -15,25 +15,25 @@ A Checkers Case Study}
 \maketitle
 
 \begin{abstract}
-This paper studies whether a small deterministic controller can look ahead,
-choose an action, and report that action under fixed memory and timing limits
-without hiding its reasoning in one large game loop. Checkers is the case
-study, not the claimed contribution. The controller has named stages for
-receiving a board, checking it, generating moves, bounded anticipation,
-evaluation, decision, and response. A portable C++11 core, mailbox protocol,
-board-geometry tests, and initial rules fixtures provide the starting
-artifact. This draft makes no claim of strong play, complete Checkers rules,
-or novelty. Its proposed contribution is conditional on later evidence:
-complete traces, measured bounds, cross-platform replay, and comparison with
-a conventional implementation.
+This paper studies a bounded, auditable form of machine intuition: a small
+deterministic stage that uses factual cues and fixed-size remembered outcomes
+to prioritize---but never remove, legalize, select, or publish---candidate
+actions. Checkers is the case study, not the claimed contribution. The
+controller has named stages for receiving a board, checking it, generating
+moves, intuition, bounded anticipation, evaluation, decision, and response.
+A portable C++11 core, mailbox protocol, board-geometry tests, and initial
+rules fixtures provide the starting artifact. This draft makes no claim of
+strong play, complete Checkers rules, or established novelty. Its proposed
+contribution is conditional on complete traces, measured bounds,
+cross-platform replay, and comparison with a conventional implementation.
 \end{abstract}
 
 \section{Introduction}
 
 Classic game systems show that a game player can be small and deterministic.
-This project asks a narrower systems question: can a controller that looks
-ahead and chooses a move remain inspectable and testable while running on a
-desktop emulator and small target hardware?
+This project asks a narrower systems question: can a controller retain
+experience and use it to prioritize a look-ahead order while remaining
+inspectable and testable on a desktop emulator and small target hardware?
 
 The proposed answer is an FSA controller with bounded working memory, named
 state, limited work per step, and visible mailbox results. Each stage can be
@@ -45,9 +45,10 @@ routine.
 The research question is:
 
 \begin{quote}
-Can a finite-state controller with bounded working memory perform useful
-look-ahead and deterministic action selection under constrained timing, while
-leaving a replayable record from input board to published action?
+Can a finite-state controller implement a useful, bounded form of intuition---
+fixed factual cues plus fixed-range historical bias used only to prioritize
+legal candidates---under constrained timing, while leaving a replayable record
+from input board to published action?
 \end{quote}
 
 Checkers supplies a concrete, finite, perfect-information case in which the
@@ -56,9 +57,9 @@ legal game. Before this work is presented as a research paper, it must provide
 all of the following:
 
 \begin{enumerate}
-  \item \textbf{An operational contract.} State what \texttt{ANTICIPATE} may
-  read and change, what \texttt{DECISION} guarantees, and when a mailbox
-  response becomes visible.
+  \item \textbf{An operational contract.} State what \texttt{INTUIT} and
+  \texttt{ANTICIPATE} may read and change, what \texttt{DECISION} guarantees,
+  and when a mailbox response becomes visible.
   \item \textbf{Checked properties.} Show that every published move is legal,
   deterministic, associated with a bounded projected line, and written as a
   complete response rather than partial data.
@@ -78,13 +79,14 @@ report. A paper that merely presents another Checkers program is not the goal.
 \section{Architecture}
 
 The controller starts in $q_0=\mathrm{WAIT\_REQUEST}$. It reads and checks a
-board, checks the result of the previous turn, and generates legal moves. It
-then enters $q_4=\mathrm{ANTICIPATE}$ to project candidate lines before
-scoring them. A chosen move enters $q_7=\mathrm{DECISION}$; the next
-transition writes the response. Bad input or a terminal position enters
-$q_E=\mathrm{ERROR}$; the next transition writes an error response. The
-source repository contains the state diagram and the formal input and output
-alphabets.
+board, checks the result of the previous turn, and generates the complete
+legal move list. It then enters $q_I=\mathrm{INTUIT}$ to attach factual cues,
+historical bias, and a projection order to that list. It enters
+$q_4=\mathrm{ANTICIPATE}$ to project candidate lines before scoring them. A
+chosen move enters $q_7=\mathrm{DECISION}$; the next transition writes the
+response. Bad input or a terminal position enters $q_E=\mathrm{ERROR}$; the
+next transition writes an error response. The source repository contains the
+state diagram and the formal input and output alphabets.
 
 The FSA design is explicitly based on the treatment of finite-automaton
 behavior and synthesis by Trakhtenbrot and Barzdin
@@ -104,11 +106,12 @@ provides evidence for the next generation state.
 \subsection{Separation of control and policy}
 
 The FSA is not the game strategy. It says which step comes next, what data is
-kept, and how errors are reported. \texttt{ANTICIPATE} is a state; projection
-is the work done in that state. \texttt{DECISION} and \texttt{ERROR} are also
-states; their outgoing transitions write to the mailbox. The strategy is a
-separate deterministic rule for ranking legal projected moves. It can change
-without changing the protocol or the rules checks.
+kept, and how errors are reported. \texttt{INTUIT} is a state that records
+factual cues and bounded historical bias; \texttt{ANTICIPATE} performs the
+projection work. \texttt{DECISION} and \texttt{ERROR} are also states; their
+outgoing transitions write to the mailbox. The strategy is a separate
+deterministic rule for ranking legal projected moves. It can change without
+changing the protocol or the rules checks.
 
 \section{Anticipation and decision}
 
@@ -116,11 +119,42 @@ The key distinction is between looking at the consequences of a move and
 choosing the move to send to the game surface. Keeping those jobs separate
 makes a small player easier to test and explain.
 
+\subsection{\texttt{INTUIT}: attention with bounded memory}
+
+\texttt{INTUIT} is not human intuition and it is not a move selector. It is a
+small deterministic stage between legal-move generation and projection. Given
+the validated board, bounded game memory, and the complete legal move list, it
+creates an \texttt{IntuitionFrame}: factual tags, a projection priority, and
+reason codes for each legal candidate.
+
+The first form, called \texttt{I0: Tactical Geometry}, may record whether a
+move captures, promotes, is the only legal move, starts or continues a forced
+jump, changes material, or has a bounded tactical consequence. It cannot add
+or remove legal moves, declare a move legal, choose a move, or write to the
+mailbox. Every candidate remains available to later projection and evaluation.
+
+Intuition needs memory. The controller therefore keeps a fixed-size
+\texttt{IntuitionHistory}: the prior decision trace, the observed
+opponent-reply class, fixed cue/outcome counters, and fixed-range cue-bias
+values. A decision stores a pending record at \texttt{DECISION}. That record
+passes through \texttt{WAIT\_RESULT} into the next request. At
+\texttt{RECONCILE\_RESULT}, the next observed board is compared with the
+record and the cue-bias values are changed by fixed, saturating increments.
+The next \texttt{INTUIT} step may use the revised bias to change projection
+order.
+
+This is iterative remembered experience, not an unbounded learner. Bias never
+makes a move legal, removes a legal move, replaces evaluation, chooses a move,
+or writes to the mailbox. It only changes the examination order of a complete
+legal candidate list. With fixed record widths and capacities, the controller
+plus its memory remains a finite, bounded implementation.
+
 \subsection{\texttt{ANTICIPATE}: bounded projection, not commitment}
 
-The \texttt{ANTICIPATE} state takes one legal candidate and builds a private
-board position for it. At first, this means applying the move and recording
-captures, promotion, whose turn it is, and any required jump continuation.
+The \texttt{ANTICIPATE} state takes the next legal candidate in the
+\texttt{IntuitionFrame} order and builds a private board position for it. At
+first, this means applying the move and recording captures, promotion, whose
+turn it is, and any required jump continuation.
 Later it may also look at a limited opponent reply and one reply after that.
 It does not predict what an opponent will do. It simply builds the positions
 that follow from a stated candidate line.
@@ -243,6 +277,46 @@ rules, bounded anticipation, deterministic decision, atomic mailbox response,
 and replayable traces. It would not be stronger than their equilibrium results
 unless it also establishes the corresponding game-theoretic guarantees.
 
+\subsection{Artificial intuition, retained experience, and constrained deployment}
+
+The closest direct literature is a small, recent line on artificial intuition.
+Johnny, Trovati, and Ray describe a computational model in which prior
+knowledge and experience expose significant patterns for automated decision
+making \cite{johnny2020computationalintuition}; Johnny and Trovati describe
+knowledge-based networks for the same purpose \cite{johnnyTrovati2020knowledge}.
+Trovati et al. then formalize existing, intuitive, and contextual knowledge as
+semantic networks and use path-based measures to identify novel links
+\cite{trovati2022newintuition}. Trovati and Alpsahin Cullen apply that line to
+automated decision making over large textual and semantic-network data
+\cite{trovatiCullen2023automatedintuition}.
+
+These works motivate the term but not this implementation contract. Their
+intuition mechanism searches semantic knowledge structures for useful or novel
+connections. It does not specify a finite control state for intuition, a
+fixed-width retained decision record, saturating historical updates, an
+invariant that every legal candidate remains available, or an atomic hardware
+publication boundary. This is not a criticism of their goals; it identifies a
+different engineering question.
+
+Finite memory has also been studied as part of a policy representation.
+Sim\~ao, Suilen, and Jansen use finite-state controllers and historical data
+for safe policy improvement in partially observable settings
+\cite{simao2023safeFSC}. Their policy is learned offline and may be replaced;
+the present controller instead fixes the control machine and applies a small,
+fully visible, saturating update to a priority bias. That distinction is
+deliberate: this project does not call a strategy policy ``intuition,'' nor
+does it conceal policy replacement inside the controller.
+
+Embedded continual-learning research provides a useful hardware contrast.
+Kwon et al. report the storage, compute, and latency trade-offs of replay-based
+continual learning on mobile and embedded devices \cite{kwon2021embeddedcontinual}.
+Zhang et al. demonstrate on-device continual learning using specialized
+MRAM-based in-memory computing \cite{zhang2024mramcontinual}. Both pursue
+adaptation through model training or replay. The proposed \texttt{INTUIT}
+mechanism instead stores a bounded decision history and finite-range counters;
+it requires neither a neural model, retraining, replay buffer, nor specialized
+learning hardware.
+
 \subsection{Checkers and game-engine testing}
 
 Checkers itself was weakly solved by Schaeffer et al. in 2007:
@@ -264,9 +338,11 @@ can reveal errors even when no trusted best move is available.
 
 Finite-state controllers, finite-state game strategies, reactive synthesis,
 and strong Checkers play are all established areas. The possible contribution
-of this project is narrower: a documented bridge from a finite-state
-controller to a complete, portable Checkers surface, with rules, bounded
-anticipation, decision publication, and tests visible at every boundary.
+of this project is narrower and more specific: an auditable bounded-intuition
+contract within a finite-state controller, carried to a complete portable
+Checkers surface. It joins factual cue capture, finite retained history,
+saturating bias updates, bounded anticipation, decision publication, and
+tests visible at every boundary.
 
 The claim remains provisional until it is measured. The paper will compare
 the completed player against declared deterministic baselines and report rule
@@ -278,15 +354,21 @@ game play or stronger formal guarantees.
 
 \section{Candidate contribution and possible impact}
 
-The work does not yet claim novelty. Finite automata can play games, and
-Checkers can be solved; both are established. The candidate contribution is an
-end-to-end implementation method for a small game player: one that carries an
-explicit finite-state controller from desktop tests to a constrained target
-while keeping its rules, bounded look-ahead, decision publication, and
-hardware costs visible.
+The work does not yet claim novelty. Finite automata can play games, Checkers
+can be solved, and artificial-intuition proposals already exist. The candidate
+contribution is an end-to-end implementation method for a small game player
+whose intuition is constrained enough to inspect: an explicit finite-state
+controller carries factual cues, a bounded decision history, and fixed-range
+historical bias from desktop tests to a constrained target. That bias may alter
+only the order in which complete legal candidates are examined; it cannot alter
+legality, suppress a candidate, select a move, or publish a response.
 
-Four parts of the design matter together:
+Five parts of the design matter together:
 \begin{enumerate}
+  \item \textbf{Intuition as a bounded contract.} \texttt{INTUIT} derives
+  factual candidate cues, retains a fixed-size decision history, and updates
+  fixed-range bias by a documented saturating rule. Its sole effect is a
+  traceable projection order over the complete legal list.
   \item \textbf{Anticipation as a named state.} \texttt{ANTICIPATE} makes
   bounded projection visible. It is neither a hidden search loop nor a
   commitment to a move.

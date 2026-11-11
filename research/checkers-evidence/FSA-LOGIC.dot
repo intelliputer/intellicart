@@ -8,30 +8,43 @@ digraph CheckersFSA {
   q1 [label="q1\nSNAPSHOT_REQUEST"];
   q2 [label="q2\nRECONCILE_RESULT"];
   q3 [label="q3\nGENERATE"];
+  qI [label="qI\nINTUIT", fillcolor="#32275a", color="#c5a8ff"];
   q4 [label="q4\nANTICIPATE"];
   q5 [label="q5\nEVALUATE"];
   q6 [label="q6\nSELECT"];
   q7 [label="q7\nDECISION", fillcolor="#193d31", color="#75d69c"];
   qE [label="qE\nERROR", fillcolor="#4a2833", color="#ff9eaa"];
   q8 [label="q8\nWAIT_RESULT"];
+  memory [label="IntuitionMemory\nframe + history +\nfixed-range bias", shape=box, style="rounded,dashed,filled", fillcolor="#2a2345", color="#c5a8ff", fontcolor="#f4f8ff"];
 
   start -> q0;
   q0 -> q1 [label="committed request(seq)"];
   q1 -> qE [label="invalid protocol / stale seq\ninvalid board", color="#ff9eaa"];
   q1 -> q2 [label="valid snapshot"];
   q2 -> qE [label="prior result contradicts\nexpected board", color="#ff9eaa"];
-  q2 -> q3 [label="result reconciled"];
+  q2 -> q3 [label="result reconciled;\nupdate intuition history"];
+  q2 -> memory [label="observed reply;\nsaturating bias update", style=dashed, color="#c5a8ff", fontcolor="#d9caff", constraint=false];
   q3 -> q3 [label="more pieces to scan"];
   q3 -> qE [label="no legal moves / terminal", color="#ff9eaa"];
-  q3 -> q4 [label="candidate available"];
+  q3 -> qI [label="complete legal move list"];
+  qI -> qI [label="tag next legal candidate"];
+  qI -> q4 [label="IntuitionFrame complete"];
   q4 -> q4 [label="project next candidate/line"];
   q4 -> q5 [label="all projections complete"];
   q5 -> q5 [label="evaluate next projection"];
   q5 -> q6 [label="all candidates scored"];
   q6 -> q7 [label="deterministic best move selected"];
   q7 -> q8 [label="write move + diagnostic; READY last", color="#75d69c"];
+  q7 -> memory [label="store pending\ndecision record", style=dashed, color="#c5a8ff", fontcolor="#d9caff", constraint=false];
   qE -> q8 [label="write error; ERROR last", color="#ff9eaa"];
-  q8 -> q0 [label="response acknowledged; new sequence", constraint=false];
+  q8 -> q0 [label="response acknowledged;\nretain pending decision", constraint=false];
+  memory -> qI [label="factual cues +\nhistorical bias", style=dashed, color="#c5a8ff", fontcolor="#d9caff", constraint=false];
+
+  // Keep the durable bias store outside the control path, in the open area
+  // beneath and to the right of ERROR.
+  // This invisible edge supplies placement only; the dashed edges above are
+  // the actual FSA memory interactions.
+  qE -> memory [style=invis, weight=100];
 
   subgraph cluster_legend {
     label="FSA definition"; labelloc="t"; fontsize=17; fontname="Helvetica"; fontcolor="#f4f8ff";
@@ -39,8 +52,9 @@ digraph CheckersFSA {
     definition [shape=plain, fontcolor="#e2eaf3", label=<
       <TABLE BORDER="0" CELLBORDER="0" CELLPADDING="5" ALIGN="LEFT">
         <TR><TD ALIGN="LEFT"><B>Initial state</B></TD><TD ALIGN="LEFT">q0 = WAIT_REQUEST</TD></TR>
-        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Input alphabet, Σ</B></TD><TD ALIGN="LEFT">committed_request(seq) · invalid_protocol(error) · stale_sequence · valid_board · invalid_board<BR ALIGN="LEFT"/>prior_result_matches · prior_result_mismatch · more_generation_work · candidate_available · no_legal_move<BR ALIGN="LEFT"/>more_projection_work · projections_complete · more_evaluation_work · evaluations_complete<BR ALIGN="LEFT"/>response_acknowledged · new_sequence</TD></TR>
-        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Output alphabet, Γ</B></TD><TD ALIGN="LEFT">BUSY(seq) · READY(seq, move, diagnostic) · ERROR(seq, error_code)<BR ALIGN="LEFT"/>trace(phase, board_hash, candidate, score)</TD></TR>
+        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Input alphabet, Σ</B></TD><TD ALIGN="LEFT">committed_request(seq) · invalid_protocol(error) · stale_sequence · valid_board · invalid_board<BR ALIGN="LEFT"/>prior_result_matches · prior_result_mismatch · more_generation_work · generation_complete · no_legal_move<BR ALIGN="LEFT"/>more_intuition_work · intuition_complete · more_projection_work · projections_complete<BR ALIGN="LEFT"/>more_evaluation_work · evaluations_complete · response_acknowledged · new_sequence</TD></TR>
+        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Output alphabet, Γ</B></TD><TD ALIGN="LEFT">BUSY(seq) · READY(seq, move, diagnostic) · ERROR(seq, error_code)<BR ALIGN="LEFT"/>trace(phase, board_hash, candidate, cues, bias, score)</TD></TR>
+        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>qI INTUIT</B></TD><TD ALIGN="LEFT">bounded factual cues and fixed-range historical bias;<BR ALIGN="LEFT"/>preserves every legal candidate and orders projection only</TD></TR>
       </TABLE>
     >];
   }
