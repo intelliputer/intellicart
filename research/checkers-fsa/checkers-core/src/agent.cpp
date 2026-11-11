@@ -1,5 +1,6 @@
 #include "checkers/agent.hpp"
 
+#include "checkers/board.hpp"
 #include "checkers/mailbox_abi.hpp"
 
 namespace checkers {
@@ -54,6 +55,10 @@ bool Agent::step() {
                 phase_ = Phase::COMMIT_ERROR;
             } else if (request_.sequence == activeSequence_) {
                 pendingError_ = Error::STALE_SEQUENCE;
+                phase_ = Phase::COMMIT_ERROR;
+            } else if (request_.command == Command::BOARD &&
+                       validateBoard(request_.board) != BoardError::NONE) {
+                pendingError_ = Error::INVALID_BOARD;
                 phase_ = Phase::COMMIT_ERROR;
             } else {
                 activeSequence_ = request_.sequence;

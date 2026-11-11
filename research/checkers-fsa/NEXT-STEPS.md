@@ -28,7 +28,7 @@ acknowledgement, and an unimplemented `BOARD` request.
 request is accepted before the prior response is acknowledged; `READY` never
 appears before move and diagnostic words are complete.
 
-## 2. Add a validated board model
+## 2. Add a validated board model — complete
 
 **Implement:** `Board::isValid()` and square/row helpers for the 32 playable
 squares. Validate non-overlapping men, kings only on occupied squares, a legal
@@ -37,8 +37,10 @@ side-to-move, and a valid forced-jump continuation square.
 **Add fixtures:** opening position, a king position, each invalid overlap, an
 orphan king bit, and each invalid continuation encoding.
 
-**Pass:** a `BOARD` request reaches `GENERATE` only for a valid position;
-invalid boards return `INVALID_BOARD` without mutating remembered state.
+**Pass:** achieved for the current no-move boundary. The portable core now
+uses the independently validated 32-square mapping, and a valid `BOARD`
+request reaches its deliberate `UNIMPLEMENTED` boundary. Invalid board
+encodings return `INVALID_BOARD` before the request is accepted as agent state.
 
 ## 3. Build the rules engine before policy
 
@@ -113,6 +115,7 @@ hardware without a black screen, missed bus response, or stale reply.
 
 ## Next coding task
 
-Start with Step 2: `Board::isValid()` and 32-square geometry fixtures. It is
-the first actual Checkers domain work, and it will make the current `BOARD`
-response advance beyond `UNIMPLEMENTED` without prematurely choosing a move.
+Start with Step 3: generate legal moves for uncrowned men only. Begin with
+forward quiet moves and then single captures; fixtures must prove that the
+existence of any capture removes every quiet move. Do not add policy, kings,
+multi-jumps, or the Teensy/Mira adapters in this increment.

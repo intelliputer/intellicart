@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "checkers/agent.hpp"
+#include "checkers/board.hpp"
 #include "checkers/mailbox_abi.hpp"
 #include "mailbox_harness.hpp"
 
@@ -97,6 +98,17 @@ void prepareRequest(checkers_test::MailboxHarness* harness, uint16_t sequence,
     words[checkers::abi::REQUEST_SEQUENCE] = sequence;
 }
 
+void writeBoard(uint16_t* words, uint32_t humanMen, uint32_t agentMen,
+                uint32_t kings, uint16_t turnFlags) {
+    words[checkers::abi::HUMAN_MEN_LO] = static_cast<uint16_t>(humanMen);
+    words[checkers::abi::HUMAN_MEN_HI] = static_cast<uint16_t>(humanMen >> 16);
+    words[checkers::abi::AGENT_MEN_LO] = static_cast<uint16_t>(agentMen);
+    words[checkers::abi::AGENT_MEN_HI] = static_cast<uint16_t>(agentMen >> 16);
+    words[checkers::abi::KINGS_LO] = static_cast<uint16_t>(kings);
+    words[checkers::abi::KINGS_HI] = static_cast<uint16_t>(kings >> 16);
+    words[checkers::abi::TURN_FLAGS] = turnFlags;
+}
+
 void runHarness(checkers_test::MailboxHarness* harness) {
     for (uint8_t ticks = 0; ticks < 8; ++ticks) {
         harness->tick();
@@ -164,10 +176,63 @@ void testProtocolErrors() {
 
     checkers_test::MailboxHarness board;
     prepareRequest(&board, 4, checkers::abi::kVersion, checkers::Command::BOARD);
+    writeBoard(board.words(), 0xFFF00000UL, 0x00000FFFUL, 0, 0);
     require(board.commitRequest(), "BOARD transaction is accepted");
     runHarness(&board);
     requireError(board, checkers::Error::UNIMPLEMENTED, 4,
                  "BOARD is explicit until board rules exist");
+}
+
+void testBoardValidation() {
+    checkers_test::MailboxHarness valid;
+    prepareRequest(&valid, 5, checkers::abi::kVersion, checkers::Command::BOARD);
+    writeBoard(valid.words(), 0xFFF00000UL, 0x00000FFFUL, 0, 0);
+    require(valid.commitRequest(), "valid opening board is accepted");
+    runHarness(&valid);
+    requireError(valid, checkers::Error::UNIMPLEMENTED, 5,
+                 "valid board reaches the deliberate no-move boundary");
+
+    checkers_test::MailboxHarness overlap;
+    prepareRequest(&overlap, 6, checkers::abi::kVersion, checkers::Command::BOARD);
+    writeBoard(overlap.words(), 1UL << 12, 1UL << 12, 0, 0);
+    require(overlap.commitRequest(), "overlapping board is accepted for error reply");
+    runHarness(&overlap);
+    requireError(overlap, checkers::Error::INVALID_BOARD, 6,
+                 "overlapping pieces are rejected");
+
+    checkers_test::MailboxHarness orphanKing;
+    prepareRequest(&orphanKing, 7, checkers::abi::kVersion, checkers::Command::BOARD);
+    writeBoard(orphanKing.words(), 0, 0, 1UL << 12, 0);
+    require(orphanKing.commitRequest(), "orphan king is accepted for error reply");
+    runHarness(&orphanKing);
+    requireError(orphanKing, checkers::Error::INVALID_BOARD, 7,
+                 "orphan king is rejected");
+
+    checkers_test::MailboxHarness continuation;
+    prepareRequest(&continuation, 8, checkers::abi::kVersion, checkers::Command::BOARD);
+    // Bit 1 requests jump continuation; the continuation square is empty.
+    writeBoard(continuation.words(), 0xFFF00000UL, 0x00000FFFUL, 0,
+               static_cast<uint16_t>(0x0002U | (12U << 8)));
+    require(continuation.commitRequest(), "invalid continuation is accepted for error reply");
+    runHarness(&continuation);
+    requireError(continuation, checkers::Error::INVALID_BOARD, 8,
+                 "empty continuation is rejected");
+}
+
+void testCoreGeometry() {
+    for (uint8_t square = 0; square < checkers::kPlayableSquares; ++square) {
+        checkers::Coordinate coordinate = {};
+        uint8_t recovered = checkers::kInvalidSquare;
+        require(checkers::squareToCoordinate(square, &coordinate),
+                "core square has a coordinate");
+        require(checkers::coordinateToSquare(coordinate.row, coordinate.column,
+                                             &recovered) && recovered == square,
+                "core coordinate round trip");
+    }
+    require(checkers::stepSquare(12, -1, 1) == 8,
+            "core geometry uses the validated mapping");
+    require(checkers::jumpSquare(12, 1, 1) == 21,
+            "core jump geometry uses the validated mapping");
 }
 
 void testSequenceWrap() {
@@ -195,6 +260,8 @@ int main() {
     testMailboxHarnessPing();
     testProtocolErrors();
     testSequenceWrap();
+    testBoardValidation();
+    testCoreGeometry();
 
     if (failures == 0) {
         std::cout << "All Checkers core fixtures passed.\n";
