@@ -22,17 +22,27 @@ ONES:   DECLE   C_BLU, C_BLU
         DECLE   C_BLU, C_BLU
         DECLE   C_BLU
 
-;; Keep the EXEC's short initial title phase quiet; MAIN draws the screen.
+;; The EXEC supplies the familiar title lead-in.  Keep it, but replace its
+;; lower copyright line before returning to the EXEC.
 TITLE:  PROC
         BYTE    102, "Intellicart", 0
         BEGIN
+        CALL    PRINT.FLS
+        DECLE   C_WHT, $2C9
+        STRING  "Copr  2026 cartheur"
+        BYTE    0
         RETURN
+        ENDP
+
+MAIN:   PROC
+        BEGIN
+        CALL    DRAW_SPLASH
+        RETURN                  ; The Teensy exits this ROM on any button.
         ENDP
 
 ;; Version 5 of the startup-screen concept, rendered using the built-in GROM
 ;; font so that every visible element is editable in this source file.
-MAIN:   PROC
-        BEGIN
+DRAW_SPLASH:
         CALL    CLRSCR
 
         ;; Compact cyan/yellow burst from the approved version 5 concept.
@@ -82,8 +92,7 @@ MAIN:   PROC
         STRING  "(<)    (>)    (->)"
         BYTE    0
 
-        RETURN                  ; The Teensy exits this ROM on any button.
-        ENDP
+        RETURN
 
         INCLUDE "../../../sdk1600/examples/library/print.asm"
         INCLUDE "../../../sdk1600/examples/library/fillmem.asm"
