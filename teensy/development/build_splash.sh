@@ -2,7 +2,7 @@
 # Build the Intellicart startup ROM and regenerate the firmware byte array.
 set -euo pipefail
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 sdk_root=$(CDPATH= cd -- "$repo_root/../sdk1600" && pwd)
 splash_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 bin_file=$(mktemp "${TMPDIR:-/tmp}/intellicart-splash.XXXXXX.bin")

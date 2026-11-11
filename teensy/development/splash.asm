@@ -6,7 +6,7 @@
         ROMW    10
         ORG     $5000
 
-        INCLUDE "../../../../sdk1600/examples/library/gimini.asm"
+        INCLUDE "../../../sdk1600/examples/library/gimini.asm"
 
 ;; EXEC-compatible cartridge header.
 ROMHDR: BIDECLE ZERO
@@ -25,12 +25,14 @@ ONES:   DECLE   C_BLU, C_BLU
 ;; Keep the EXEC's short initial title phase quiet; MAIN draws the screen.
 TITLE:  PROC
         BYTE    102, "Intellicart", 0
+        BEGIN
         RETURN
         ENDP
 
 ;; Version 5 of the startup-screen concept, rendered using the built-in GROM
 ;; font so that every visible element is editable in this source file.
 MAIN:   PROC
+        BEGIN
         CALL    CLRSCR
 
         ;; Compact cyan/yellow burst from the approved version 5 concept.
@@ -83,5 +85,5 @@ MAIN:   PROC
         RETURN                  ; The Teensy exits this ROM on any button.
         ENDP
 
-        INCLUDE "../../../../sdk1600/examples/library/print.asm"
-        INCLUDE "../../../../sdk1600/examples/library/fillmem.asm"
+        INCLUDE "../../../sdk1600/examples/library/print.asm"
+        INCLUDE "../../../sdk1600/examples/library/fillmem.asm"
