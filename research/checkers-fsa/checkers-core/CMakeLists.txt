@@ -15,6 +15,7 @@ target_compile_options(checkers_core PRIVATE -Wall -Wextra -Wpedantic)
 
 add_executable(checkers_core_fixtures tests/fixture_runner.cpp)
 target_link_libraries(checkers_core_fixtures PRIVATE checkers_core)
+target_include_directories(checkers_core_fixtures PRIVATE tests)
 target_compile_options(checkers_core_fixtures PRIVATE -Wall -Wextra -Wpedantic)
 
 enable_testing()

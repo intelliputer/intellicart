@@ -24,6 +24,10 @@ uint16_t packStatusSequence(Status status, uint16_t sequence) {
 
 bool decodeRequest(const uint16_t words[kMailboxWords], MailboxRequest* request,
                    Error* error) {
+    // Sequence is deliberately captured before validation so ERROR can echo
+    // the transaction which caused it.
+    *request = {};
+    request->sequence = static_cast<uint16_t>(words[REQUEST_SEQUENCE] & kSequenceMask);
     if (words[MAGIC] != kMagic) {
         *error = Error::BAD_MAGIC;
         return false;
@@ -43,7 +47,6 @@ bool decodeRequest(const uint16_t words[kMailboxWords], MailboxRequest* request,
         return false;
     }
 
-    request->sequence = static_cast<uint16_t>(words[REQUEST_SEQUENCE] & kSequenceMask);
     request->command = static_cast<Command>(rawCommand);
     request->board.humanMen = readBits(words[HUMAN_MEN_LO], words[HUMAN_MEN_HI]);
     request->board.agentMen = readBits(words[AGENT_MEN_LO], words[AGENT_MEN_HI]);

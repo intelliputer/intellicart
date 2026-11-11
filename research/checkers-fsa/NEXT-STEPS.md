@@ -9,10 +9,13 @@ until they pass in the native fixture runner.
 - `checkers-core` builds as ISO C++11 on Linux.
 - The versioned 32-word mailbox ABI is defined in one header.
 - The FSA has a bounded Stage-0 `PING` request/response path.
-- Fixtures prove valid PING, bad magic, response encoding, and stale-sequence
-  rejection.
+- A desktop `MailboxHarness` drives the same word-level request/response path
+  that the future Mira and Teensy adapters will use.
+- Fixtures prove valid PING, bad magic/version/command, response ordering,
+  acknowledgement, stale-sequence rejection, sequence wrap, and an explicit
+  `UNIMPLEMENTED` response for `BOARD`.
 
-## 1. Complete the protocol harness
+## 1. Complete the protocol harness — complete
 
 **Implement:** a desktop `MailboxHarness` around `checkers::Agent`. It owns a
 32-word mailbox, writes a request in CP1610 order, invokes one `Agent::step()`
@@ -21,9 +24,9 @@ at a time, and asserts that response data appears before `READY`.
 **Add fixtures:** bad version, bad command, sequence wrap boundary, response
 acknowledgement, and an unimplemented `BOARD` request.
 
-**Pass:** every malformed request terminates as `ERROR`; no new request is
-accepted before the prior response is acknowledged; `READY` never appears
-before move and diagnostic words are complete.
+**Pass:** achieved. Every malformed request terminates as `ERROR`; no new
+request is accepted before the prior response is acknowledged; `READY` never
+appears before move and diagnostic words are complete.
 
 ## 2. Add a validated board model
 
@@ -110,6 +113,6 @@ hardware without a black screen, missed bus response, or stale reply.
 
 ## Next coding task
 
-Start with Step 1: `MailboxHarness` and protocol-edge fixtures. It improves
-the contract we will share with Mira and Teensy without making any Checkers
-rule decision prematurely.
+Start with Step 2: `Board::isValid()` and 32-square geometry fixtures. It is
+the first actual Checkers domain work, and it will make the current `BOARD`
+response advance beyond `UNIMPLEMENTED` without prematurely choosing a move.
