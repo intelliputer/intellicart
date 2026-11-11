@@ -36,7 +36,7 @@ as `std::optional`; use an explicit `bool valid` beside a value instead.
 Suggested source layout:
 
 ```text
-research/checkers-ai/checkers-core/
+research/checkers-fsa/checkers-core/
 ├── include/checkers/
 │   ├── board.hpp             # 32-square representation and validation
 │   ├── move.hpp              # fixed-capacity move and jump path
