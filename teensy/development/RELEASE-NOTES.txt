@@ -1,4 +1,4 @@
-Intellicart refinement notes — 2026-10-19
+Intellicart refinement notes — 2026-11-11
 
 This is a working release-notes draft covering the Intellicart firmware,
 microSD workflow, documentation, and project-structure refinements completed
@@ -7,6 +7,14 @@ today.
 Firmware and build
 ------------------
 
+- Replaced the legacy RTO-Cart TV startup screen with an Intellicart splash
+  based on the approved version-5 concept: title accent, Intelliputer
+  computer-face mark, "SELECT A GAME", and unlabeled previous/select/next
+  button cues.
+- Added editable CP-1610 startup-ROM source in splash.asm and the reproducible
+  build_splash.sh generator for the firmware's embedded splash.h.
+- Validated the splash ROM with the local SDK-1600 assembler (zero errors and
+  warnings) and verified the complete Teensy 4.1 sketch with Arduino CLI.
 - Made the Teensy 4.1 sketch build cleanly in Arduino IDE and Arduino CLI.
 - Moved splash.h beside intellicart.ino so Arduino can resolve the local
   include consistently.
