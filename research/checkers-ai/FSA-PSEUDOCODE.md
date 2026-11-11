@@ -1,9 +1,12 @@
 # Checkers FSA pseudocode
 
 This is implementation pseudocode for the architecture in
-[FSA-ARCHITECTURE.md](FSA-ARCHITECTURE.md).  It describes a deterministic
-Teensy agent that is advanced in small units of work outside the cartridge
-bus's time-critical read path.
+[FSA-ARCHITECTURE.md](FSA-ARCHITECTURE.md).  It describes a deterministic,
+portable C++11 agent core.  A Teensy adapter advances it in small units of
+work outside the cartridge bus's time-critical read path; a Mira adapter may
+advance the same core from a host peripheral tick.  See
+[PORTABLE-CORE.md](PORTABLE-CORE.md) for the boundary between core and
+adapters.
 
 ```text
 enum Phase {
@@ -67,9 +70,9 @@ struct AgentMemory {
 }
 
 
-function serviceCheckersMailbox(memory):
-    // Called only from a safe, non-time-critical point in the firmware.
-    // Execute one small bounded unit of work, then return to bus service.
+function serviceCheckersAgent(memory, mailbox):
+    // Core interface: mailbox is an adapter abstraction, never RAM[] itself.
+    // Execute one small bounded unit of work, then return to the host.
 
     switch memory.phase:
 
