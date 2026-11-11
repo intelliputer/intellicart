@@ -30,3 +30,7 @@ Toward a new ideal horizon
           MULTI_JUMP_NOT_IMPLEMENTED boundary, add no policy or search, and
           prove the new cases with isolated fixtures before connecting move
           generation to the FSA response path.
+    Evidence: added checkers-evidence, containing the formal FSA state and
+          alphabet definition plus a rendered PNG proof. The visual marks q0
+          as the initial WAIT_REQUEST state and includes the full normalized
+          input alphabet (Σ) and observable output alphabet (Γ).

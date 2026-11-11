@@ -1,0 +1,47 @@
+digraph CheckersFSA {
+  graph [rankdir=TB, bgcolor="#10151d", pad="0.35", nodesep="0.45", ranksep="0.7", fontname="Helvetica"];
+  node [shape=box, style="rounded,filled", color="#8ec5ff", fillcolor="#172536", fontcolor="#f4f8ff", penwidth=1.5, fontname="Helvetica", fontsize=13, margin="0.15,0.10"];
+  edge [color="#b6c8dc", fontcolor="#e2eaf3", fontname="Helvetica", fontsize=10, arrowsize=0.75];
+
+  start [shape=circle, label="", width=0.22, fixedsize=true, fillcolor="#75d69c", color="#75d69c"];
+  q0 [label="q0\nWAIT_REQUEST", fillcolor="#244363", color="#75d69c", penwidth=2.5];
+  q1 [label="q1\nSNAPSHOT_REQUEST"];
+  q2 [label="q2\nRECONCILE_RESULT"];
+  q3 [label="q3\nGENERATE"];
+  q4 [label="q4\nPROJECT"];
+  q5 [label="q5\nEVALUATE"];
+  q6 [label="q6\nSELECT"];
+  q7 [label="q7\nCOMMIT_RESPONSE", fillcolor="#193d31", color="#75d69c"];
+  qE [label="qE\nCOMMIT_ERROR", fillcolor="#4a2833", color="#ff9eaa"];
+  q8 [label="q8\nWAIT_RESULT"];
+
+  start -> q0;
+  q0 -> q1 [label="committed request(seq)"];
+  q1 -> qE [label="invalid protocol / stale seq\ninvalid board", color="#ff9eaa"];
+  q1 -> q2 [label="valid snapshot"];
+  q2 -> qE [label="prior result contradicts\nexpected board", color="#ff9eaa"];
+  q2 -> q3 [label="result reconciled"];
+  q3 -> q3 [label="more pieces to scan"];
+  q3 -> qE [label="no legal moves / terminal", color="#ff9eaa"];
+  q3 -> q4 [label="candidate available"];
+  q4 -> q4 [label="project next candidate/line"];
+  q4 -> q5 [label="all projections complete"];
+  q5 -> q5 [label="evaluate next projection"];
+  q5 -> q6 [label="all candidates scored"];
+  q6 -> q7 [label="deterministic best move selected"];
+  q7 -> q8 [label="write move + diagnostic; READY last", color="#75d69c"];
+  qE -> q8 [label="write error; ERROR last", color="#ff9eaa"];
+  q8 -> q0 [label="response acknowledged; new sequence", constraint=false];
+
+  subgraph cluster_legend {
+    label="FSA definition"; labelloc="t"; fontsize=17; fontname="Helvetica"; fontcolor="#f4f8ff";
+    color="#4b6075"; style="rounded"; penwidth=1.25;
+    definition [shape=plain, fontcolor="#e2eaf3", label=<
+      <TABLE BORDER="0" CELLBORDER="0" CELLPADDING="5" ALIGN="LEFT">
+        <TR><TD ALIGN="LEFT"><B>Initial state</B></TD><TD ALIGN="LEFT">q0 = WAIT_REQUEST</TD></TR>
+        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Input alphabet, Σ</B></TD><TD ALIGN="LEFT">committed_request(seq) · invalid_protocol(error) · stale_sequence · valid_board · invalid_board<BR ALIGN="LEFT"/>prior_result_matches · prior_result_mismatch · more_generation_work · candidate_available · no_legal_move<BR ALIGN="LEFT"/>more_projection_work · projections_complete · more_evaluation_work · evaluations_complete<BR ALIGN="LEFT"/>response_acknowledged · new_sequence</TD></TR>
+        <TR><TD ALIGN="LEFT" VALIGN="TOP"><B>Output alphabet, Γ</B></TD><TD ALIGN="LEFT">BUSY(seq) · READY(seq, move, diagnostic) · ERROR(seq, error_code)<BR ALIGN="LEFT"/>trace(phase, board_hash, candidate, score)</TD></TR>
+      </TABLE>
+    >];
+  }
+}
