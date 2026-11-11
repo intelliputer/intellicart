@@ -87,3 +87,41 @@ original EXEC copyright field, including `Mattel`, visible.
   byte-compared to it.
 - Hardware validation confirmed the standard EXEC lead-in, the removal of
   `Mattel` from the lower copyright field, and the one-line final text.
+
+## Game-surface training notes
+
+The final hardware-validated startup surface is deliberately simple:
+
+- blue color-stack background with a cyan border;
+- white `INTELLICART` wordmark;
+- yellow `SELECT A GAME` prompt; and
+- green `(<)  (o)  (>)` controller cues.
+
+It uses only `CLRSCR` and `PRINT.FLS`, which are known to work in this small
+10-bit boot ROM.  This is the safe baseline for future menus, title cards,
+and game surfaces.  Keep each composition within the Intellivision's 20 by
+12 character grid; prototype it as a proof image before changing firmware.
+
+### GRAM lesson
+
+An experimental version attempted a two-tile-high `INTELLI`/`CART` wordmark
+with cyan and purple foreground/background blocks.  It correctly assembled
+and compiled for Teensy, but on real hardware the EXEC lead-in appeared and
+then video went black when the startup ROM entered the direct GRAM/F/B-mode
+path.  Compilation therefore does not validate STIC timing or display mode.
+
+Do **not** write GRAM directly from this short-lived startup routine.  A
+future custom-tile surface must use a proper vertical-blank initialization
+routine/ISR, following the SDK-1600 GRAM examples, and must be tested first
+on hardware with a minimal one-card image.  Keep the color-stack text version
+as a recovery build until that staged test succeeds.
+
+### Recommended workflow for future surfaces
+
+1. Design against the 20 by 12 grid and create a proof image.
+2. Implement the color-stack/GROM version first with `PRINT.FLS`.
+3. Assemble the splash ROM and compile the Teensy firmware.
+4. Flash and test the complete console sequence: power on, Reset, Player 1
+   Enter.
+5. Introduce custom GRAM only in a separate, reversible experiment with a
+   vblank ISR; retain the known-good HEX as recovery firmware.

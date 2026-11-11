@@ -20,7 +20,7 @@ ZERO:   DECLE   $0000
         DECLE   $0000           ; Colour-stack mode.
 ONES:   DECLE   C_BLU, C_BLU
         DECLE   C_BLU, C_BLU
-        DECLE   C_BLU
+        DECLE   C_CYN           ; Cyan border.
 
 ;; The EXEC supplies the familiar title lead-in.  Keep it, but replace its
 ;; lower copyright line before returning to the EXEC.
@@ -40,56 +40,24 @@ MAIN:   PROC
         RETURN                  ; The Teensy exits this ROM on any button.
         ENDP
 
-;; Version 5 of the startup-screen concept, rendered using the built-in GROM
-;; font so that every visible element is editable in this source file.
+;; Hardware-safe, typography-first color-stack screen.  Custom GRAM tiles
+;; remain in the artwork proofs until their initialization path is validated.
 DRAW_SPLASH:
         CALL    CLRSCR
 
-        ;; Compact cyan/yellow burst from the approved version 5 concept.
         CALL    PRINT.FLS
-        DECLE   C_CYN, $200 + 0*20 + 5
-        STRING  "/   |   /"
-        BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 1*20 + 5
+        DECLE   C_WHT, $200 + 2*20 + 4
         STRING  "INTELLICART"
         BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_YEL, $200 + 2*20 + 5
-        STRING  "-   |   -"
-        BYTE    0
-
-        ;; Intelliputer computer-face mark.
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 3*20 + 4
-        STRING  ".----------."
-        BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 4*20 + 4
-        STRING  "|  O    O  |"
-        BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 5*20 + 4
-        STRING  "|          |"
-        BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 6*20 + 4
-        STRING  "|  [____]  |"
-        BYTE    0
-        CALL    PRINT.FLS
-        DECLE   C_WHT, $200 + 7*20 + 4
-        STRING  "'--|_|_|--'"
-        BYTE    0
 
         CALL    PRINT.FLS
-        DECLE   C_YEL, $200 + 8*20 + 3
+        DECLE   C_YEL, $200 + 6*20 + 3
         STRING  "SELECT A GAME"
         BYTE    0
 
-        ;; Unlabelled previous, select, and next controls.
         CALL    PRINT.FLS
-        DECLE   C_GRN, $200 + 10*20 + 2
-        STRING  "(<)    (>)    (->)"
+        DECLE   C_GRN, $200 + 9*20 + 4
+        STRING  "(<)  (o)  (>)"
         BYTE    0
 
         RETURN

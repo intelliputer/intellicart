@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="576" viewBox="0 0 960 576">
+  <title>Intellicart blocked GRAM wordmark splash proof</title>
+  <rect width="960" height="576" fill="#101018"/>
+  <text x="480" y="42" fill="#d8d8d8" font-family="monospace" font-size="20" text-anchor="middle">PROPOSED MAIN SCREEN — blocked GRAM wordmark</text>
+  <rect x="136" y="80" width="688" height="416" rx="8" fill="#000040" stroke="#00d8df" stroke-width="8"/>
+  <!-- Two square-edged groups, each to be rendered with 8×16 custom GRAM tiles. -->
+  <rect x="246" y="154" width="308" height="76" fill="#00d8df"/>
+  <rect x="570" y="154" width="144" height="76" fill="#b050d0"/>
+  <text x="400" y="207" fill="#000040" font-family="Noto Sans Mono, monospace" font-size="50" font-weight="900" text-anchor="middle" letter-spacing="-4">INTELLI</text>
+  <text x="642" y="207" fill="#000040" font-family="Noto Sans Mono, monospace" font-size="50" font-weight="900" text-anchor="middle" letter-spacing="-4">CART</text>
+  <text x="480" y="320" fill="#ffe900" font-family="monospace" font-size="28" font-weight="bold" text-anchor="middle">SELECT A GAME</text>
+  <text x="480" y="408" fill="#00ee20" font-family="monospace" font-size="28" font-weight="bold" text-anchor="middle">(&lt;)  (o)  (&gt;)</text>
+  <text x="480" y="544" fill="#a0a0a0" font-family="monospace" font-size="16" text-anchor="middle">Proof artifact: each title block is planned as a custom 8 × 16 GRAM tile group.</text>
+</svg>
