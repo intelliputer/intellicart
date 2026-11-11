@@ -47,3 +47,15 @@ Toward a new ideal horizon
         - bounded opponent-reply anticipation;
         - deeper deterministic search if worthwhile.
         The next two are rules completion; step 3 produces the first genuinely playable computer opponent.
+        1701: The pivot should be:
+            Checkers is the instrument, not the contribution.
+
+            The paper becomes worth publishing only if it demonstrates a general result:
+            A small game agent can perform bounded anticipation and deterministic decision under strict hardware constraints, while preserving a complete, replayable chain from input state to published action.
+
+            That claim has four parts that must be demonstrated, not merely described:
+            1. A precise contract. Define what ANTICIPATE may read and change, what DECISION guarantees, and when a mailbox response becomes externally valid.
+            2. Provable operational properties. Show that every published move is legal, deterministic, traceable to a bounded projection, and atomically committed. Show that each controller step has a known time and memory bound.
+            3. Cross-surface evidence. Run the same core, fixtures, and traces on desktop, Mira, and the actual Intellicart/Teensy path. This is where the work becomes more than an abstract FSA diagram.
+            4. A meaningful comparison. Compare against a simple conventional game loop or monolithic implementation: defect localization, reproducibility, memory, timing, and development effort—not only win rate.
+            The paper should therefore be repositioned as an auditable constrained-controller paper, with Checkers as the concrete case study. If we cannot produce the timing, memory, replay, and comparison evidence, it should remain a technical report rather than an arXiv submission.

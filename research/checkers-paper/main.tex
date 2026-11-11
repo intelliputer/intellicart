@@ -5,7 +5,8 @@
 \usepackage{hyperref}
 \usepackage{booktabs}
 
-\title{A Finite-State Checkers Player for Portable Systems}
+\title{Auditable Bounded Deliberation on Constrained Game Hardware:\\
+A Checkers Case Study}
 \author{Christopher A. Tucker\\
 \texttt{cartheur@pm.me}}
 \date{Draft --- November 2026}
@@ -14,26 +15,65 @@
 \maketitle
 
 \begin{abstract}
-This paper describes an unfinished deterministic Checkers player that can run
-on both a desktop and a small target system. Its controller is a finite-state
-machine (FSA) with named stages for receiving a board, checking it, generating
-moves, looking ahead, scoring moves, choosing one move, and reporting either
-a result or an error. The FSA controls the order of work; a separate rule ranks
-legal moves. The repository contains a portable C++11 core, a small mailbox
-protocol, board-geometry tests, and the first rules tests for uncrowned men.
-This draft explains the design and its tests. It does not claim strong play,
-complete Checkers rules, or a new result in game programming.
+This paper studies whether a small deterministic controller can look ahead,
+choose an action, and report that action under fixed memory and timing limits
+without hiding its reasoning in one large game loop. Checkers is the case
+study, not the claimed contribution. The controller has named stages for
+receiving a board, checking it, generating moves, bounded anticipation,
+evaluation, decision, and response. A portable C++11 core, mailbox protocol,
+board-geometry tests, and initial rules fixtures provide the starting
+artifact. This draft makes no claim of strong play, complete Checkers rules,
+or novelty. Its proposed contribution is conditional on later evidence:
+complete traces, measured bounds, cross-platform replay, and comparison with
+a conventional implementation.
 \end{abstract}
 
 \section{Introduction}
 
 Classic game systems show that a game player can be small and deterministic.
-This project asks whether such a player can be clear enough to inspect and
-test, while also running on a desktop emulator and small target hardware.
+This project asks a narrower systems question: can a controller that looks
+ahead and chooses a move remain inspectable and testable while running on a
+desktop emulator and small target hardware?
 
-The answer proposed here is an FSA with named state, limited work per step, and
-visible mailbox results. Each stage can be tested on its own instead of hiding
-the whole process inside one search routine.
+The proposed answer is an FSA controller with bounded working memory, named
+state, limited work per step, and visible mailbox results. Each stage can be
+tested on its own instead of hiding the whole process inside one search
+routine.
+
+\section{Research question and publication gate}
+
+The research question is:
+
+\begin{quote}
+Can a finite-state controller with bounded working memory perform useful
+look-ahead and deterministic action selection under constrained timing, while
+leaving a replayable record from input board to published action?
+\end{quote}
+
+Checkers supplies a concrete, finite, perfect-information case in which the
+question can be tested. It is not sufficient to show that the program plays a
+legal game. Before this work is presented as a research paper, it must provide
+all of the following:
+
+\begin{enumerate}
+  \item \textbf{An operational contract.} State what \texttt{ANTICIPATE} may
+  read and change, what \texttt{DECISION} guarantees, and when a mailbox
+  response becomes visible.
+  \item \textbf{Checked properties.} Show that every published move is legal,
+  deterministic, associated with a bounded projected line, and written as a
+  complete response rather than partial data.
+  \item \textbf{Measured bounds.} Report time per FSA step, time per complete
+  decision, code size, working memory, and the limit on retained projection
+  data.
+  \item \textbf{Cross-platform replay.} Run the same fixtures and traces
+  through the desktop core, Mira, and the intended hardware path.
+  \item \textbf{A fair comparison.} Compare the design with a simple,
+  conventional game loop on defect localization, reproducibility, memory, and
+  timing. Playing strength is a secondary measure.
+\end{enumerate}
+
+If these conditions are not met, this document should remain a technical
+report. A paper that merely presents another Checkers program is not the goal.
 
 \section{Architecture}
 
@@ -159,14 +199,114 @@ multi-jumps, draw rules, policy, deeper projection, target adapters, and
 performance experiments remain future work. These limits are deliberate
 boundaries, not claims of completed functionality.
 
-\section{Related work and historical context}
+\section{Literature survey and position}
 
-The present architectural basis is the behavioral and synthesis treatment of
-finite automata by Trakhtenbrot and Barzdin \cite{trakhtenbrotBarzdin1973}.
-This section will grow into a reviewed comparison with Checkers programs,
-finite-state game controllers, constrained game hardware, and period
-computer-player implementations. The project has an initial lead list, but no
-novelty claim should be inferred before those sources are verified.
+\subsection{Automata and controller synthesis}
+
+The direct foundation is the treatment of automaton behavior and synthesis by
+Trakhtenbrot and Barzdin \cite{trakhtenbrotBarzdin1973}. It supplies the
+discipline used here: state, stored information, inputs, outputs, and
+transitions are stated rather than left implicit.
+
+Recent reactive-synthesis work addresses a different but related problem:
+constructing a controller from a formal specification. Geatti, Montali, and
+Rivkin construct finite, terminating controllers for finite-trace
+specifications through symbolic automata \cite{geatti2022declare}. Their
+result is not a model of this Checkers implementation, which is deliberately
+specified and fixture-tested by hand. It is useful as a comparison point:
+formal synthesis can provide specification-level guarantees, while this
+project must show that its explicit controller, rules, and mailbox interface
+work together on its target systems.
+
+The SYNTCOMP reports provide a second methodological comparison point.
+Jacobs et al. compare synthesis tools through shared benchmarks, reproducible
+runs, and measurements of solution size and quality
+\cite{jacobs2024syntcomp}. The present project should adopt that spirit on a
+smaller scale: publish the positions, traces, build revision, state count,
+memory use, decision latency, and error cases used for each result.
+
+\subsection{Finite machines as game strategies}
+
+Černý, Bošanský, and An study finite-state machines as compact strategy
+representations for extensive-form games \cite{cerny2020fsmgames}. They show
+that restricting strategy representation to machines can reduce the search
+space and support scalable algorithms. Their setting is theoretically richer
+than the one here: it concerns extensive-form games, imperfect information,
+and equilibrium computation. The present work is instead a perfect-information
+Checkers player with a deliberately small controller and a separate move
+ranking rule.
+
+This difference makes the comparison productive rather than competitive. A
+future result could be stronger in an engineering sense if it demonstrates an
+end-to-end, reproducible machine strategy on constrained hardware: legal
+rules, bounded anticipation, deterministic decision, atomic mailbox response,
+and replayable traces. It would not be stronger than their equilibrium results
+unless it also establishes the corresponding game-theoretic guarantees.
+
+\subsection{Checkers and game-engine testing}
+
+Checkers itself was weakly solved by Schaeffer et al. in 2007:
+with perfect play, the game is a draw \cite{schaeffer2007checkers}. This is a
+necessary historical reference and a limit on the claims of this paper. The
+goal is not to solve Checkers again or to compete with a large solver. It is
+to build a transparent opponent whose behavior can be followed from an input
+board to one published move.
+
+Testing is therefore as important as playing strength. Méndez et al. use
+metamorphic testing to find inconsistencies in chess-engine evaluation
+\cite{mendez2023metamorphic}. Their work suggests a useful next step for this
+project: add Checkers-specific metamorphic tests for board reflection,
+rotation where rule conventions permit it, side exchange, and equivalent
+position encodings. Such tests complement ordinary legal-move fixtures and
+can reveal errors even when no trusted best move is available.
+
+\subsection{Claim and comparison plan}
+
+Finite-state controllers, finite-state game strategies, reactive synthesis,
+and strong Checkers play are all established areas. The possible contribution
+of this project is narrower: a documented bridge from a finite-state
+controller to a complete, portable Checkers surface, with rules, bounded
+anticipation, decision publication, and tests visible at every boundary.
+
+The claim remains provisional until it is measured. The paper will compare
+the completed player against declared deterministic baselines and report rule
+coverage, metamorphic-test results, state-by-state timing, code and memory
+size, and replayable traces on both desktop and target systems. Those results
+will show whether the design has a useful advantage in clarity, reproducibility,
+or resource use. They must not be replaced by a general claim of stronger
+game play or stronger formal guarantees.
+
+\section{Candidate contribution and possible impact}
+
+The work does not yet claim novelty. Finite automata can play games, and
+Checkers can be solved; both are established. The candidate contribution is an
+end-to-end implementation method for a small game player: one that carries an
+explicit finite-state controller from desktop tests to a constrained target
+while keeping its rules, bounded look-ahead, decision publication, and
+hardware costs visible.
+
+Four parts of the design matter together:
+\begin{enumerate}
+  \item \textbf{Anticipation as a named state.} \texttt{ANTICIPATE} makes
+  bounded projection visible. It is neither a hidden search loop nor a
+  commitment to a move.
+  \item \textbf{Decision as a named state.} \texttt{DECISION} separates
+  choosing a move from writing it to the mailbox. The following transition
+  writes the complete move before it marks the result ready.
+  \item \textbf{One portable core.} The same deterministic rules and
+  controller interfaces are intended to run in desktop tests, the Mira
+  emulator, the CP1610 game surface, and the Teensy-assisted cartridge
+  system.
+  \item \textbf{An evidence trail.} State diagrams, mailbox fixtures,
+  rule fixtures, projected traces, resource measurements, and hardware
+  observations can be checked separately and kept with the source.
+\end{enumerate}
+
+If the completed system shows that these parts remain consistent across the
+host and target, it may offer a useful method for other small game surfaces
+and constrained interactive systems. The claim must be earned with the
+evidence listed in the publication gate. Better Checkers play is a separate
+empirical question, not the central claim.
 
 \section{Evaluation plan}
 
@@ -181,10 +321,10 @@ The completed paper will report:
 
 \section{Conclusion}
 
-The project separates control, rules, and move ranking for a portable
-deterministic Checkers player. This draft records the design and the evidence
-available so far. Stronger claims must wait for the remaining rules,
-experiments, and related-work review.
+The project uses Checkers to test a controller that separates rules,
+bounded anticipation, decision, and publication. This draft records the
+design and the evidence available so far. It becomes a research paper only if
+the required cross-platform, bounded, and comparative evidence is produced.
 
 \bibliographystyle{plain}
 \bibliography{references}
