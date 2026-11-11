@@ -1,5 +1,13 @@
 # Checkers AI: second-step implementation plan
 
+> **Status — 11 November 2026:** The portable C++11 foundation now exists in
+> [`research/checkers-fsa/checkers-core/`](../checkers-fsa/checkers-core/).
+> It builds and passes native Stage-0 `PING` fixtures. Active implementation
+> sequencing, acceptance criteria, and the next coding task now live in
+> [`research/checkers-fsa/NEXT-STEPS.md`](../checkers-fsa/NEXT-STEPS.md).
+> This document remains the original hardware-oriented plan and protocol
+> rationale.
+
 This is the plan after the proposal.  The objective is to validate the
 mailbox transport before building a playable Checkers opponent.
 
@@ -22,6 +30,11 @@ search must be incremental too; it may never delay a required bus response.
 
 ## Step 0 — capture the current baseline
 
+**Portable-core status:** complete for the software baseline. The current core
+defines the mailbox ABI, validates `PING`, preserves FSA sequencing, and has a
+native fixture runner. The outstanding hardware-baseline items below remain
+required before flashing experimental firmware.
+
 1. Keep a copy of the committed Intellicart firmware HEX and the normal SD
    card available as recovery media.
 2. Create a fresh, dedicated FAT/FAT32 test card labelled `CHECKERS-FSA-T01`.
@@ -33,6 +46,10 @@ search must be incremental too; it may never delay a required bus response.
 available if the experimental mapper fails.
 
 ## Step 1 — validate a per-game RAM mapping
+
+**Refined order:** first add the desktop mailbox harness and board-validation
+fixtures in the portable core. Then assemble this CP1610 loopback surface and
+run it in Mira before using a dedicated physical SD card.
 
 1. Create a minimal CP1610 ROM that only renders `MAILBOX T01` and reads and
    writes a small mailbox window.
@@ -49,6 +66,12 @@ same word is read back and displayed.  This proves the mapper and direction
 of the existing `RAM[]` path without any agent logic.
 
 ## Step 2 — add a committed request/response handshake
+
+**ABI refinement:** the portable core's `mailbox_abi.hpp` is now the single
+source of truth. It packs protocol version/command in word `+1`, response
+status/echoed sequence in word `+10`, and reserves words `+12..+23` for up to
+12 landing squares (not `+12..+15`, which would be too short for all legal
+multi-jump paths). Response data is written before the final `READY` commit.
 
 Implement only the following fields at first:
 
@@ -77,6 +100,11 @@ bus lockup, or stale response.
 
 ## Step 3 — make servicing incremental
 
+**Core status:** the portable agent already advances one FSA phase per
+`step()` call. The future Teensy adapter must call that core operation only at
+a safe point; it must never embed strategy or move generation in the bus read
+path.
+
 1. Add a small `serviceCheckersMailbox()` state machine.
 2. Call it only at a safe point in the existing bus handler, never during the
    data-output window for a cartridge read.
@@ -102,6 +130,10 @@ advances and eventually returns `READY`.
 all fixtures.
 
 ## Step 5 — first FSA move
+
+**Refined order:** board validation and native legal-move fixtures precede
+this step. The first move policy remains deliberately narrow and deterministic;
+policy growth follows only after the rules fixtures pass.
 
 Implement a deliberately narrow agent:
 
