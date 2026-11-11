@@ -4,6 +4,7 @@
 #include "checkers/agent.hpp"
 #include "checkers/board.hpp"
 #include "checkers/mailbox_abi.hpp"
+#include "checkers/rules.hpp"
 #include "mailbox_harness.hpp"
 
 namespace {
@@ -235,6 +236,91 @@ void testCoreGeometry() {
             "core jump geometry uses the validated mapping");
 }
 
+checkers::Board makeBoard(uint32_t human, uint32_t agent,
+                          checkers::Side side = checkers::Side::HUMAN) {
+    checkers::Board board = {};
+    board.humanMen = human;
+    board.agentMen = agent;
+    board.kings = 0;
+    board.sideToMove = side;
+    board.jumpContinuation = false;
+    board.continuationSquare = checkers::kInvalidSquare;
+    return board;
+}
+
+bool hasMove(const checkers::MoveList& moves, uint8_t origin, uint8_t landing,
+             uint8_t captured = checkers::kInvalidSquare) {
+    for (uint8_t index = 0; index < moves.count; ++index) {
+        const checkers::Move& move = moves.moves[index];
+        if (move.origin == origin && move.landingCount == 1 &&
+            move.landings[0] == landing &&
+            move.capturedCount == (captured == checkers::kInvalidSquare ? 0 : 1) &&
+            (captured == checkers::kInvalidSquare || move.capturedSquares[0] == captured)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void testMenMoveGeneration() {
+    checkers::MoveList moves = {};
+    checkers::Board opening = makeBoard(0xFFF00000UL, 0x00000FFFUL);
+    require(checkers::generateMenMoves(opening, &moves) == checkers::RulesError::NONE,
+            "opening move generation succeeds");
+    require(moves.count == 7, "opening position has seven human quiet moves");
+    require(hasMove(moves, 20, 16) && hasMove(moves, 21, 16) &&
+            hasMove(moves, 21, 17) && hasMove(moves, 22, 17) &&
+            hasMove(moves, 22, 18) && hasMove(moves, 23, 18) &&
+            hasMove(moves, 23, 19), "opening quiet moves use expected geometry");
+
+    checkers::Board blocked = makeBoard((1UL << 20) | (1UL << 16), 0);
+    require(checkers::generateMenMoves(blocked, &moves) == checkers::RulesError::NONE &&
+            moves.count == 0, "blocked edge man has no quiet move");
+
+    checkers::Board oneCapture = makeBoard(1UL << 20, 1UL << 16);
+    require(checkers::generateMenMoves(oneCapture, &moves) == checkers::RulesError::NONE &&
+            moves.count == 1 && hasMove(moves, 20, 13, 16),
+            "single forward capture is generated");
+
+    checkers::Board captureBeatsQuiet = makeBoard((1UL << 20) | (1UL << 21),
+                                                   1UL << 16);
+    require(checkers::generateMenMoves(captureBeatsQuiet, &moves) == checkers::RulesError::NONE &&
+            moves.count == 1 && hasMove(moves, 20, 13, 16),
+            "a capture removes every quiet alternative");
+
+    checkers::Board twoCaptures = makeBoard(1UL << 21, (1UL << 16) | (1UL << 17));
+    require(checkers::generateMenMoves(twoCaptures, &moves) == checkers::RulesError::NONE &&
+            moves.count == 2 && hasMove(moves, 21, 12, 16) &&
+            hasMove(moves, 21, 14, 17), "both captures are generated");
+    require(moves.moves[0].landings[0] == 12 && moves.moves[1].landings[0] == 14,
+            "capture ordering is canonical left then right");
+
+    checkers::Board noMoves = makeBoard(1UL << 0, 0);
+    require(checkers::generateMenMoves(noMoves, &moves) == checkers::RulesError::NONE &&
+            moves.count == 0, "man on the wrong edge has no legal move");
+}
+
+void testApplyMenMove() {
+    checkers::Board before = makeBoard(1UL << 20, 1UL << 16);
+    checkers::MoveList moves = {};
+    checkers::Board after = {};
+    checkers::generateMenMoves(before, &moves);
+    require(checkers::applyMenMove(before, moves.moves[0], &after) == checkers::RulesError::NONE,
+            "single capture applies");
+    require(after.humanMen == (1UL << 13) && after.agentMen == 0,
+            "apply clears origin and captured piece, then occupies landing");
+    require(after.sideToMove == checkers::Side::AGENT,
+            "apply changes turn after a single capture");
+
+    checkers::Move illegal = {};
+    illegal.origin = 20;
+    illegal.landingCount = 1;
+    illegal.landings[0] = 16;
+    require(checkers::applyMenMove(before, illegal, &after) ==
+            checkers::RulesError::MOVE_NOT_LEGAL,
+            "apply refuses a quiet move when capture is compulsory");
+}
+
 void testSequenceWrap() {
     checkers_test::MailboxHarness harness;
     prepareRequest(&harness, checkers::abi::kSequenceMask, checkers::abi::kVersion,
@@ -262,6 +348,8 @@ int main() {
     testSequenceWrap();
     testBoardValidation();
     testCoreGeometry();
+    testMenMoveGeneration();
+    testApplyMenMove();
 
     if (failures == 0) {
         std::cout << "All Checkers core fixtures passed.\n";

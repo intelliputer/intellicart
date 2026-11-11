@@ -16,3 +16,6 @@ Toward a new ideal horizon
           single captures, compulsory-capture filtering, canonical ordering,
           and applyMove fixtures. Do not add policy, kings, promotion,
           multi-jumps, or Teensy/Mira adapters in this increment.
+    Implementing: added the core rules module with exactly that scope. Men who
+          reach a promotion row or positions already requiring a multi-jump are
+          deliberately reported as unsupported until their dedicated increments.

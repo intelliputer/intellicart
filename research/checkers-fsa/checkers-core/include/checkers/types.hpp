@@ -64,6 +64,8 @@ struct Move {
     uint8_t origin;
     uint8_t landingCount;
     uint8_t landings[kMaxLandings];
+    uint8_t capturedCount;
+    uint8_t capturedSquares[kMaxLandings];
     uint16_t diagnostic;
 };
 

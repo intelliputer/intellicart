@@ -9,7 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(checkers_core
     src/agent.cpp
     src/board.cpp
-    src/mailbox_abi.cpp)
+    src/mailbox_abi.cpp
+    src/rules.cpp)
 
 target_include_directories(checkers_core PUBLIC include)
 target_compile_options(checkers_core PRIVATE -Wall -Wextra -Wpedantic)
