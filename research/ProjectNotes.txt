@@ -4,3 +4,15 @@ Toward a new ideal horizon
 11.11.2026
     1346: Completed the prelimiaries to start FSA checkers research.
     1348: "validate the 32-square board representation and encode its geometry in fixtures"
+    1350: Kept the board-geometry research module separate from checkers-core.
+          Established and fixture-tested the 32 playable-square numbering,
+          coordinate round trips, edge-safe steps/jumps, opening position, and
+          invalid overlap, orphan-king, and continuation encodings.
+    1352: Promoted only the validated board representation into checkers-core.
+          BOARD mailbox requests now validate before becoming agent state;
+          valid boards stop at the intentional UNIMPLEMENTED boundary and
+          invalid boards return INVALID_BOARD.
+    Next: implement uncrowned-men move generation only: forward quiet moves,
+          single captures, compulsory-capture filtering, canonical ordering,
+          and applyMove fixtures. Do not add policy, kings, promotion,
+          multi-jumps, or Teensy/Mira adapters in this increment.
