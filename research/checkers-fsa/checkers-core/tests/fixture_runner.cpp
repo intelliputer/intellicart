@@ -274,6 +274,7 @@ void testMenMoveGeneration() {
             hasMove(moves, 23, 19), "opening quiet moves use expected geometry");
 
     checkers::Board blocked = makeBoard((1UL << 20) | (1UL << 16), 0);
+    blocked.kings = 1UL << 16;  // The blocker is outside this men-only module.
     require(checkers::generateMenMoves(blocked, &moves) == checkers::RulesError::NONE &&
             moves.count == 0, "blocked edge man has no quiet move");
 
@@ -282,7 +283,7 @@ void testMenMoveGeneration() {
             moves.count == 1 && hasMove(moves, 20, 13, 16),
             "single forward capture is generated");
 
-    checkers::Board captureBeatsQuiet = makeBoard((1UL << 20) | (1UL << 21),
+    checkers::Board captureBeatsQuiet = makeBoard((1UL << 20) | (1UL << 22),
                                                    1UL << 16);
     require(checkers::generateMenMoves(captureBeatsQuiet, &moves) == checkers::RulesError::NONE &&
             moves.count == 1 && hasMove(moves, 20, 13, 16),
@@ -298,6 +299,13 @@ void testMenMoveGeneration() {
     checkers::Board noMoves = makeBoard(1UL << 0, 0);
     require(checkers::generateMenMoves(noMoves, &moves) == checkers::RulesError::NONE &&
             moves.count == 0, "man on the wrong edge has no legal move");
+
+    checkers::Board continuation = makeBoard(1UL << 20, 1UL << 16);
+    continuation.jumpContinuation = true;
+    continuation.continuationSquare = 20;
+    require(checkers::generateMenMoves(continuation, &moves) ==
+            checkers::RulesError::MULTI_JUMP_NOT_IMPLEMENTED,
+            "existing jump continuation is deliberately deferred");
 }
 
 void testApplyMenMove() {
@@ -319,6 +327,14 @@ void testApplyMenMove() {
     require(checkers::applyMenMove(before, illegal, &after) ==
             checkers::RulesError::MOVE_NOT_LEGAL,
             "apply refuses a quiet move when capture is compulsory");
+
+    checkers::Board promotion = makeBoard(1UL << 4, 0);
+    checkers::generateMenMoves(promotion, &moves);
+    require(moves.count == 1 && moves.moves[0].landings[0] == 0,
+            "promotion-row move is identified as a legal geometric move");
+    require(checkers::applyMenMove(promotion, moves.moves[0], &after) ==
+            checkers::RulesError::PROMOTION_NOT_IMPLEMENTED,
+            "promotion is not silently applied before its dedicated increment");
 }
 
 void testSequenceWrap() {

@@ -75,6 +75,9 @@ RulesError generateMenMoves(const Board& board, MoveList* moves) {
         return RulesError::INVALID_BOARD;
     }
     moves->count = 0;
+    if (board.jumpContinuation) {
+        return RulesError::MULTI_JUMP_NOT_IMPLEMENTED;
+    }
 
     MoveList captures = {};
     const int8_t rowDelta = board.sideToMove == Side::HUMAN ? -1 : 1;

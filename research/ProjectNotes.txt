@@ -19,3 +19,14 @@ Toward a new ideal horizon
     Implementing: added the core rules module with exactly that scope. Men who
           reach a promotion row or positions already requiring a multi-jump are
           deliberately reported as unsupported until their dedicated increments.
+    Completed: fixture-audited the men-only rules module. It now generates
+          forward quiet moves and single captures, suppresses quiet moves when
+          a capture exists, preserves canonical origin/left/right ordering,
+          and applies only generated legal moves. Corrected two fixture
+          assumptions during the audit; all portable-core fixtures pass.
+    Next: add promotion and kings as one rules increment. Crown a man when it
+          ends a legal move on its far row; generate/apply king moves and
+          single captures in both diagonal directions. Retain the explicit
+          MULTI_JUMP_NOT_IMPLEMENTED boundary, add no policy or search, and
+          prove the new cases with isolated fixtures before connecting move
+          generation to the FSA response path.

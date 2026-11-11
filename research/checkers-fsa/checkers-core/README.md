@@ -34,6 +34,21 @@ It does not yet generate Checkers moves.  A `BOARD` command is recognized by
 the ABI but reports `UNIMPLEMENTED` until board validation and move generation
 are introduced with fixtures.
 
+## Rules module status
+
+`include/checkers/rules.hpp` now implements the first rules-only increment:
+uncrowned men make forward diagonal quiet moves or single forward captures;
+any available capture suppresses every quiet move. Moves are returned in stable
+origin/left/right order and `applyMenMove()` rejects anything outside that
+generated set.
+
+The module is intentionally incomplete in two visible ways: a position that
+already requires jump continuation returns `MULTI_JUMP_NOT_IMPLEMENTED`, and
+applying a move that reaches a promotion row returns
+`PROMOTION_NOT_IMPLEMENTED`. Those outcomes prevent the prototype from
+silently playing an illegal partial game while kings, promotion, and multi-hop
+captures are implemented in their own tested increments.
+
 `include/checkers/mailbox_abi.hpp` is the normative word-level contract.  The
 CP1610 assembly, DesktopTeensy/Mira peripheral, and Teensy adapter must use
 that contract rather than duplicate offsets or bit packing.
