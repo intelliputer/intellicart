@@ -14,11 +14,11 @@ enum Phase {
     SNAPSHOT_REQUEST,
     RECONCILE_RESULT,
     GENERATE,
-    PROJECT,
+    ANTICIPATE,
     EVALUATE,
     SELECT,
-    COMMIT_RESPONSE,
-    COMMIT_ERROR,
+    DECISION,
+    ERROR,
     WAIT_RESULT
 }
 
@@ -89,18 +89,18 @@ function serviceCheckersAgent(memory, mailbox):
 
             if request.magic != CHECKERS_MAGIC:
                 memory.error = BAD_MAGIC
-                memory.phase = COMMIT_ERROR
+                memory.phase = ERROR
                 return
 
             if request.sequence <= memory.activeSequence:
                 memory.error = STALE_SEQUENCE
-                memory.phase = COMMIT_ERROR
+                memory.phase = ERROR
                 return
 
             board = decodeAndValidateBoard(request)
             if board is INVALID:
                 memory.error = INVALID_BOARD
-                memory.phase = COMMIT_ERROR
+                memory.phase = ERROR
                 return
 
             memory.activeSequence = request.sequence
@@ -127,7 +127,7 @@ function serviceCheckersAgent(memory, mailbox):
                     // Never continue a planned line after an unexpected result.
                     // This also catches an out-of-date surface or mailbox error.
                     memory.error = UNEXPECTED_BOARD_RESULT
-                    memory.phase = COMMIT_ERROR
+                    memory.phase = ERROR
                     return
 
             memory.phase = GENERATE
@@ -139,9 +139,9 @@ function serviceCheckersAgent(memory, mailbox):
             if square is past LAST_PLAYABLE_SQUARE:
                 if memory.candidates is empty:
                     memory.error = NO_LEGAL_MOVE
-                    memory.phase = COMMIT_ERROR
+                    memory.phase = ERROR
                 else:
-                    memory.phase = PROJECT
+                    memory.phase = ANTICIPATE
                 return
 
             appendLegalMovesForOnePiece(memory.requestedBoard, square,
@@ -152,7 +152,7 @@ function serviceCheckersAgent(memory, mailbox):
             enforceCompulsoryCapture(memory.candidates)
             return
 
-        case PROJECT:
+        case ANTICIPATE:
             // Anticipation: project exactly one candidate per call.
             if memory.projectCursor == count(memory.candidates):
                 memory.phase = EVALUATE
@@ -203,10 +203,10 @@ function serviceCheckersAgent(memory, mailbox):
                 expectedResult = winner.resultingBoard,
                 observedResult = UNKNOWN,
                 matched = false)
-            memory.phase = COMMIT_RESPONSE
+            memory.phase = DECISION
             return
 
-        case COMMIT_RESPONSE:
+        case DECISION:
             // Commit data first; READY is the final write.
             mailbox.writeMove(memory.selectedMove)
             mailbox.writeDiagnostic(selectedProjection(memory).policyValue)
@@ -214,7 +214,7 @@ function serviceCheckersAgent(memory, mailbox):
             memory.phase = WAIT_RESULT
             return
 
-        case COMMIT_ERROR:
+        case ERROR:
             mailbox.writeDiagnostic(memory.error)
             mailbox.writeResponse(memory.activeSequence, ERROR)
             memory.phase = WAIT_RESULT

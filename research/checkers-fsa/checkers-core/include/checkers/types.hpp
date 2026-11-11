@@ -10,11 +10,11 @@ enum class Phase : uint8_t {
     SNAPSHOT_REQUEST,
     RECONCILE_RESULT,
     GENERATE,
-    PROJECT,
+    ANTICIPATE,
     EVALUATE,
     SELECT,
-    COMMIT_RESPONSE,
-    COMMIT_ERROR,
+    DECISION,
+    ERROR,
     WAIT_RESULT
 };
 

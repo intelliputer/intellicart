@@ -84,27 +84,27 @@ RECONCILE_RESULT
   -> REJECT_REQUEST         surface result contradicts the accepted move
 
 GENERATE
-  -> PROJECT                one legal candidate is available
-  -> COMMIT_ERROR           no legal candidate / terminal position
+  -> ANTICIPATE             one legal candidate is available
+  -> ERROR                  no legal candidate / terminal position
 
-PROJECT
+ANTICIPATE
   -> EVALUATE               one candidate or one bounded continuation projected
-  -> PROJECT                more work remains
+  -> ANTICIPATE             more projection work remains
 
 EVALUATE
   -> SELECT                 all candidates have a policy value
 
 SELECT
-  -> COMMIT_RESPONSE        a deterministic best move is retained
+  -> DECISION                a deterministic best move is retained
 
-COMMIT_RESPONSE
+DECISION
   -> WAIT_RESULT            data words written first, READY written last
 
 WAIT_RESULT
   -> WAIT_REQUEST           a new, valid sequence arrives
 ```
 
-`PROJECT` is where anticipation lives.  It applies a candidate move to the
+`ANTICIPATE` performs bounded projection: it applies a candidate move to the
 immutable requested position, including captures, promotion, and jump
 continuation.  A later version can project an opponent reply and a bounded
 reply-to-reply line.  It must preserve the projected transition trace, not
@@ -113,7 +113,7 @@ allows the next observed board to be reconciled with it.
 
 Each invocation advances at most one bounded unit of work: for example,
 generate one piece's moves, apply one candidate, or score one projected line.
-The mailbox remains `BUSY` until `COMMIT_RESPONSE`.  This is required because
+The mailbox remains `BUSY` until `DECISION`.  This is required because
 the same Teensy must service cartridge reads within their timing window; a
 search may never occupy a bus response path.
 
@@ -149,7 +149,7 @@ move was proposed and the game surface returned an observed outcome.
 1. Keep the Stage 0 mailbox loopback in `NEXT-STEPS.md`; it validates
    transport, not intelligence.
 2. Define `AgentMemory` and the FSA enum alongside the mailbox service.
-   Implement `WAIT_REQUEST -> SNAPSHOT_REQUEST -> COMMIT_RESPONSE` first.
+   Implement `WAIT_REQUEST -> SNAPSHOT_REQUEST -> DECISION` first.
 3. Add board validation and `RECONCILE_RESULT`, with serial traces that show
    request sequence, intended move, expected board hash, and observed board
    hash.

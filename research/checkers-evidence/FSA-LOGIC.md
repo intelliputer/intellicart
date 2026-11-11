@@ -12,11 +12,11 @@ stateDiagram-v2
     state "q1: SNAPSHOT_REQUEST" as q1
     state "q2: RECONCILE_RESULT" as q2
     state "q3: GENERATE" as q3
-    state "q4: PROJECT" as q4
+    state "q4: ANTICIPATE" as q4
     state "q5: EVALUATE" as q5
     state "q6: SELECT" as q6
-    state "q7: COMMIT_RESPONSE" as q7
-    state "qE: COMMIT_ERROR" as qE
+    state "q7: DECISION" as q7
+    state "qE: ERROR" as qE
     state "q8: WAIT_RESULT" as q8
 
     q0 --> q1: committed request(seq)

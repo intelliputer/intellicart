@@ -52,14 +52,14 @@ bool Agent::step() {
 
         case Phase::SNAPSHOT_REQUEST:
             if (pendingError_ != Error::NONE) {
-                phase_ = Phase::COMMIT_ERROR;
+                phase_ = Phase::ERROR;
             } else if (request_.sequence == activeSequence_) {
                 pendingError_ = Error::STALE_SEQUENCE;
-                phase_ = Phase::COMMIT_ERROR;
+                phase_ = Phase::ERROR;
             } else if (request_.command == Command::BOARD &&
                        validateBoard(request_.board) != BoardError::NONE) {
                 pendingError_ = Error::INVALID_BOARD;
-                phase_ = Phase::COMMIT_ERROR;
+                phase_ = Phase::ERROR;
             } else {
                 activeSequence_ = request_.sequence;
                 phase_ = Phase::RECONCILE_RESULT;
@@ -72,20 +72,20 @@ bool Agent::step() {
                 response_.sequence = activeSequence_;
                 response_.move = emptyMove(abi::kDiagnosticPing);
                 response_.error = Error::NONE;
-                phase_ = Phase::COMMIT_RESPONSE;
+                phase_ = Phase::DECISION;
             } else {
                 pendingError_ = Error::UNIMPLEMENTED;
-                phase_ = Phase::COMMIT_ERROR;
+                phase_ = Phase::ERROR;
             }
             return true;
 
-        case Phase::COMMIT_RESPONSE:
+        case Phase::DECISION:
             responseReady_ = true;
             hasRequest_ = false;
             phase_ = Phase::WAIT_RESULT;
             return true;
 
-        case Phase::COMMIT_ERROR:
+        case Phase::ERROR:
             response_.status = Status::ERROR;
             response_.sequence = request_.sequence;
             response_.move = emptyMove(static_cast<uint16_t>(pendingError_));
@@ -96,11 +96,11 @@ bool Agent::step() {
             return true;
 
         case Phase::GENERATE:
-        case Phase::PROJECT:
+        case Phase::ANTICIPATE:
         case Phase::EVALUATE:
         case Phase::SELECT:
             pendingError_ = Error::UNIMPLEMENTED;
-            phase_ = Phase::COMMIT_ERROR;
+            phase_ = Phase::ERROR;
             return true;
     }
 

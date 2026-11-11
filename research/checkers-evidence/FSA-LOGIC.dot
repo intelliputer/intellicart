@@ -8,11 +8,11 @@ digraph CheckersFSA {
   q1 [label="q1\nSNAPSHOT_REQUEST"];
   q2 [label="q2\nRECONCILE_RESULT"];
   q3 [label="q3\nGENERATE"];
-  q4 [label="q4\nPROJECT"];
+  q4 [label="q4\nANTICIPATE"];
   q5 [label="q5\nEVALUATE"];
   q6 [label="q6\nSELECT"];
-  q7 [label="q7\nCOMMIT_RESPONSE", fillcolor="#193d31", color="#75d69c"];
-  qE [label="qE\nCOMMIT_ERROR", fillcolor="#4a2833", color="#ff9eaa"];
+  q7 [label="q7\nDECISION", fillcolor="#193d31", color="#75d69c"];
+  qE [label="qE\nERROR", fillcolor="#4a2833", color="#ff9eaa"];
   q8 [label="q8\nWAIT_RESULT"];
 
   start -> q0;
