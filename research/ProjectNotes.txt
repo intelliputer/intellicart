@@ -59,3 +59,6 @@ Toward a new ideal horizon
             3. Cross-surface evidence. Run the same core, fixtures, and traces on desktop, Mira, and the actual Intellicart/Teensy path. This is where the work becomes more than an abstract FSA diagram.
             4. A meaningful comparison. Compare against a simple conventional game loop or monolithic implementation: defect localization, reproducibility, memory, timing, and development effort—not only win rate.
             The paper should therefore be repositioned as an auditable constrained-controller paper, with Checkers as the concrete case study. If we cannot produce the timing, memory, replay, and comparison evidence, it should remain a technical report rather than an arXiv submission.
+        1706: On intuition:
+        The first implementation should be called something like I0: Tactical Geometry. It uses only rule-visible facts and changes projection order, not the chosen move. That gives us a safe baseline: we can measure whether the cue layer reduces work or improves trace quality while preserving identical final decisions.
+        Only after that works should we attempt I1, where bounded anticipation feeds back a compact threat signal—such as “this move permits an immediate forced capture”—into the next turn’s intuition record.
