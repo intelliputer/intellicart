@@ -22,6 +22,9 @@ references will be added only after primary sources have been checked.
 - ../checkers-fsa/ — portable C++11 core, fixtures, and implementation plan.
 - ../checkers-ai/PERIOD-COMPUTER-PLAYERS.md — initial historical research lead
   list; it is not yet a formal related-work survey.
+- ../references/Finite_Automata_Behavior_and_Synthesis.pdf — the Trakhtenbrot
+  and Barzdin source from which the FSA behavior-and-synthesis discipline is
+  explicitly derived.
 
 ## Before submission
 

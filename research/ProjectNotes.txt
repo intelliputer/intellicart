@@ -34,3 +34,16 @@ Toward a new ideal horizon
           alphabet definition plus a rendered PNG proof. The visual marks q0
           as the initial WAIT_REQUEST state and includes the full normalized
           input alphabet (Σ) and observable output alphabet (Γ).
+    1643: Seven major milestones remain to a hardware-playable Checkers opponent:
+        1. Promotion and kings.
+        2. Multi-jumps and forced jump continuation.
+        3. Connect legal moves to the FSA: generate, project, select a deterministic lowest move, return READY.
+        4. Add draw/repetition history.
+        5. Run the complete protocol through the desktop/Mira mailbox peripheral.
+        6. Build the CP1610 Checkers surface and validate it in Mira.
+        7. Add the thin Teensy adapter and validate the dedicated SD-card test on hardware.
+        After that, strength is a separate, open-ended track:
+        - one-ply safety/promotion/capture policy;
+        - bounded opponent-reply anticipation;
+        - deeper deterministic search if worthwhile.
+        The next two are rules completion; step 3 produces the first genuinely playable computer opponent.

@@ -5,7 +5,7 @@
 \usepackage{hyperref}
 \usepackage{booktabs}
 
-\title{A Portable Finite-State Architecture for Deterministic Checkers Play}
+\title{A Finite-State Checkers Player for Portable Systems}
 \author{Christopher A. Tucker\\
 \texttt{cartheur@pm.me}}
 \date{Draft --- November 2026}
@@ -14,42 +14,43 @@
 \maketitle
 
 \begin{abstract}
-This paper introduces a work-in-progress architecture for a deterministic
-Checkers player designed to run across constrained and desktop environments.
-The controller is expressed as a finite-state machine (FSA) with explicit
-request, validation, rule generation, bounded projection, evaluation,
-selection, response, and error states. The design separates the control
-machine from policy: the FSA governs safe, inspectable progress, while a
-replaceable policy ranks legal candidate moves. A portable C++11 core, a
-word-oriented mailbox protocol, board-geometry fixtures, and initial
-men-only rules fixtures provide the current implementation evidence. This
-draft reports the architecture and its validation approach; it does not yet
-claim game-playing strength, complete Checkers rules, or novelty relative to
-prior game programs.
+This paper describes an unfinished deterministic Checkers player that can run
+on both a desktop and a small target system. Its controller is a finite-state
+machine (FSA) with named stages for receiving a board, checking it, generating
+moves, looking ahead, scoring moves, choosing one move, and reporting either
+a result or an error. The FSA controls the order of work; a separate rule ranks
+legal moves. The repository contains a portable C++11 core, a small mailbox
+protocol, board-geometry tests, and the first rules tests for uncrowned men.
+This draft explains the design and its tests. It does not claim strong play,
+complete Checkers rules, or a new result in game programming.
 \end{abstract}
 
 \section{Introduction}
 
-Classic game systems demonstrate that useful computer players need not rely on
-large learned models. This project investigates a different question: can a
-small, deterministic controller provide a transparent and portable foundation
-for Checkers play across a host emulator and constrained target hardware?
+Classic game systems show that a game player can be small and deterministic.
+This project asks whether such a player can be clear enough to inspect and
+test, while also running on a desktop emulator and small target hardware.
 
-The proposed answer is an FSA with explicit state, bounded work, and observable
-mailbox results. It is intended to make each stage inspectable and
-fixture-testable rather than embedding control flow implicitly in a monolithic
-search routine.
+The answer proposed here is an FSA with named state, limited work per step, and
+visible mailbox results. Each stage can be tested on its own instead of hiding
+the whole process inside one search routine.
 
 \section{Architecture}
 
-The controller begins in $q_0=\mathrm{WAIT\_REQUEST}$. It snapshots and
-validates an incoming board, reconciles prior results, generates legal moves,
-and enters $q_4=\mathrm{ANTICIPATE}$. In that state it performs bounded
-projection of candidate lines before evaluation and selection. A retained
-move enters $q_7=\mathrm{DECISION}$, whose transition writes the successful
-response; invalid or terminal work enters $q_E=\mathrm{ERROR}$, whose
-transition writes the error response. The current state diagram and formal
-input/output alphabets are maintained with the source repository.
+The controller starts in $q_0=\mathrm{WAIT\_REQUEST}$. It reads and checks a
+board, checks the result of the previous turn, and generates legal moves. It
+then enters $q_4=\mathrm{ANTICIPATE}$ to project candidate lines before
+scoring them. A chosen move enters $q_7=\mathrm{DECISION}$; the next
+transition writes the response. Bad input or a terminal position enters
+$q_E=\mathrm{ERROR}$; the next transition writes an error response. The
+source repository contains the state diagram and the formal input and output
+alphabets.
+
+The FSA design is explicitly based on the treatment of finite-automaton
+behavior and synthesis by Trakhtenbrot and Barzdin
+\cite{trakhtenbrotBarzdin1973}. The book supplies the starting discipline:
+state, stored information, inputs, outputs, and transitions must all be
+stated. This project is not presented as a new theorem in automata theory.
 
 \begin{center}
 \fbox{\parbox{0.9\linewidth}{
@@ -62,94 +63,76 @@ provides evidence for the next generation state.
 
 \subsection{Separation of control and policy}
 
-The FSA is not the game strategy. It defines state transitions, memory
-ownership, failure paths, and commit boundaries. In particular,
-\texttt{ANTICIPATE} is a controller state, while projection is the bounded
-operation it performs; \texttt{DECISION} and \texttt{ERROR} name conditions,
-while their outgoing transitions perform mailbox writes. Policy is a separate,
-deterministic ranking function over legal projected moves. This separation
-permits policy experiments without weakening protocol or rules validation.
+The FSA is not the game strategy. It says which step comes next, what data is
+kept, and how errors are reported. \texttt{ANTICIPATE} is a state; projection
+is the work done in that state. \texttt{DECISION} and \texttt{ERROR} are also
+states; their outgoing transitions write to the mailbox. The strategy is a
+separate deterministic rule for ranking legal projected moves. It can change
+without changing the protocol or the rules checks.
 
 \section{Anticipation and decision}
 
-The central distinction in this architecture is between anticipating a
-consequence and deciding what to expose to the game surface. The distinction
-is useful even for a small deterministic player because it places board
-simulation, policy, memory, and external effects on different sides of an
-explicit boundary.
+The key distinction is between looking at the consequences of a move and
+choosing the move to send to the game surface. Keeping those jobs separate
+makes a small player easier to test and explain.
 
 \subsection{\texttt{ANTICIPATE}: bounded projection, not commitment}
 
-The \texttt{ANTICIPATE} state receives a legal candidate from generation and
-constructs a private projected position. At minimum, projection applies the
-candidate move and records captures, promotion, turn ownership, and any
-required jump continuation. A later implementation may extend the same state
-to project a bounded opponent reply and a reply-to-reply line. Thus,
-anticipation is not a prediction that the opponent must make a particular
-move; it is a finite, reproducible construction of positions that may result
-from a candidate line.
+The \texttt{ANTICIPATE} state takes one legal candidate and builds a private
+board position for it. At first, this means applying the move and recording
+captures, promotion, whose turn it is, and any required jump continuation.
+Later it may also look at a limited opponent reply and one reply after that.
+It does not predict what an opponent will do. It simply builds the positions
+that follow from a stated candidate line.
 
-Three constraints make this state suitable for a constrained system:
+Three rules keep this work clear and small:
 \begin{enumerate}
-  \item \textbf{Legality precedes projection.} The state consumes only a
-  generated legal move; it does not invent board transitions or bypass the
-  rules engine.
-  \item \textbf{Projection is private and bounded.} The accepted board remains
-  immutable while a separate scratch position and transition trace are built.
-  Each FSA invocation performs a bounded unit of work, such as applying one
-  candidate or one continuation, before yielding control.
-  \item \textbf{Projection remains inspectable.} The trace retains more than a
-  numerical value: it identifies the candidate, projected board, captures,
-  continuations, and later policy value. It can therefore explain why a
-  selected move was possible and support reconciliation with the next observed
-  board.
+  \item \textbf{Start with a legal move.} This state uses only moves produced
+  by the rules engine.
+  \item \textbf{Keep the work private and limited.} The accepted board does
+  not change. A scratch board and a trace are used instead. One FSA step does
+  only a small unit of work, such as applying one move or one continuation.
+  \item \textbf{Keep the trace.} The trace records the candidate, projected
+  board, captures, continuations, and later score. It shows why a move could
+  be chosen and helps check the next board that arrives.
 \end{enumerate}
 
-The state may loop while further candidate lines need projection. Its exit
-condition is not a likely move being found, but that the explicitly bounded
-set of requested projections is complete. This gives the policy a defined
-input and prevents a search-like task from becoming an unbounded bus or frame
-latency source.
+The state loops until it has made every projection requested for this turn. It
+does not stop merely because it has found a move that looks good. This gives
+the ranking rule a known set of inputs and keeps look-ahead from taking over
+the bus or the frame time.
 
-\subsection{\texttt{DECISION}: selection becomes an accountable boundary}
+\subsection{\texttt{DECISION}: one move is made final}
 
-\texttt{DECISION} begins only after evaluation has assigned values to the
-complete candidate set and \texttt{SELECT} has retained one candidate using a
-deterministic ordering. It is therefore not another evaluation pass. Its
-responsibility is to stabilize the selected move, preserve its diagnostic
-trace, and make the result eligible for publication through the mailbox.
+\texttt{DECISION} begins after every candidate has a score and
+\texttt{SELECT} has chosen one using a fixed ordering. It does not score moves
+again. It holds the chosen move and its trace until the result is written to
+the mailbox.
 
-The outgoing transition from \texttt{DECISION}, rather than the state name
-itself, writes the response data and sets \texttt{READY} last. This ordering
-forms a small commit protocol: a reader never observes a ready result with
-partially written move data. It also provides a precise audit point: every
-external move can be associated with an accepted request sequence, a
-rules-valid candidate, its projected trace, and the policy comparison that
-selected it.
+The transition out of \texttt{DECISION} writes the move data and sets
+\texttt{READY} last. A reader therefore cannot see a ready result before the
+move is complete. Each reported move can be traced back to its request, a
+legal candidate, its projected line, and the comparison that chose it.
 
-Deterministic tie-breaking is part of this boundary. When candidate values
-are equal, a canonical ordering---for example origin square followed by
-landing order---selects one move without hidden randomness. The result is
-repeatable across host and target adapters, which is essential for fixtures,
-replay, and comparison of future policy changes.
+Tie-breaking also belongs here. If two candidates have the same value, a fixed
+ordering---for example origin square followed by landing order---chooses one
+without randomness. The same input then gives the same result on the host and
+on the target, which helps testing and replay.
 
 \subsection{Why the separation matters}
 
-Without this split, a game program can blur three distinct questions: whether
-a move is legal, what its consequences are, and whether it should be exposed
-as the chosen action. The FSA assigns them to \texttt{GENERATE},
-\texttt{ANTICIPATE}, and \texttt{SELECT}/\texttt{DECISION}, respectively.
-That allocation does not guarantee strong play; it makes the source of a
-choice testable. A future policy can become more sophisticated without
-changing the validity of the rules, the bounded nature of projection, or the
-mailbox commit discipline.
+Without this split, a game program can mix up three questions: is a move
+legal, what follows from it, and should it be chosen? The FSA gives these to
+\texttt{GENERATE}, \texttt{ANTICIPATE}, and
+\texttt{SELECT}/\texttt{DECISION}. This does not guarantee strong play. It
+does make the source of a choice testable. A better ranking rule can be added
+without changing the rules, the limits on projection, or the mailbox order.
 
 \subsection{Portable boundary}
 
-The shared core is C++11 and avoids target-specific dependencies. Host
-emulation and target firmware are adapters around a stable board, mailbox, and
-agent interface. The intended target includes resource-constrained systems,
-but hardware measurements are not yet reported.
+The shared core is C++11 and has no target-specific dependencies. The host
+emulator and target firmware sit around the same board, mailbox, and agent
+interfaces. Hardware measurements are not yet available.
 
 \section{Validation methodology}
 
@@ -178,11 +161,12 @@ boundaries, not claims of completed functionality.
 
 \section{Related work and historical context}
 
-This section is reserved for a reviewed comparison with Checkers programs,
+The present architectural basis is the behavioral and synthesis treatment of
+finite automata by Trakhtenbrot and Barzdin \cite{trakhtenbrotBarzdin1973}.
+This section will grow into a reviewed comparison with Checkers programs,
 finite-state game controllers, constrained game hardware, and period
-computer-player implementations. The project has an initial lead list, but
-citations will be added only after source verification. No novelty claim
-should be inferred from this placeholder section.
+computer-player implementations. The project has an initial lead list, but no
+novelty claim should be inferred before those sources are verified.
 
 \section{Evaluation plan}
 
@@ -197,10 +181,12 @@ The completed paper will report:
 
 \section{Conclusion}
 
-The project proposes a testable separation between game-control FSA, rules,
-and policy for portable deterministic Checkers play. The contribution of this
-draft is an accountable research direction and an implementation evidence
-trail. Any stronger claim awaits the remaining rules, experiments, and
-related-work review.
+The project separates control, rules, and move ranking for a portable
+deterministic Checkers player. This draft records the design and the evidence
+available so far. Stronger claims must wait for the remaining rules,
+experiments, and related-work review.
+
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
